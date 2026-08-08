@@ -10,7 +10,8 @@ dotenv_1.default.config();
 exports.config = {
     port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5001,
     nodeEnv: process.env.NODE_ENV || 'development',
-    llmApiKey: process.env.LLM_API_KEY || '',
-    llmBaseUrl: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
-    llmModel: process.env.LLM_MODEL || 'gpt-4o-mini'
+    llmProvider: process.env.LLM_PROVIDER || (process.env.GEMINI_API_KEY ? 'gemini' : 'openai'),
+    llmApiKey: process.env.GEMINI_API_KEY || process.env.LLM_API_KEY || '',
+    llmBaseUrl: process.env.LLM_BASE_URL || '',
+    llmModel: process.env.LLM_MODEL || 'gemini-2.5-flash'
 };

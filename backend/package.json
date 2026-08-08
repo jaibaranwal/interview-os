@@ -12,12 +12,14 @@
     "test:brain": "ts-node src/test-brain.ts",
     "test:orchestrator": "ts-node src/test-orchestrator.ts",
     "test:e2e": "ts-node src/test-e2e.ts",
-    "test:audit": "ts-node src/test-audit.ts"
+    "test:audit": "ts-node src/test-audit.ts",
+    "test:gemini": "ts-node src/test-gemini-integration.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^2.16.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

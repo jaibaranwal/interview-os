@@ -4,32 +4,66 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LLMClient = void 0;
+const genai_1 = require("@google/genai");
 const openai_1 = __importDefault(require("openai"));
 const env_1 = require("../config/env");
 const logger_1 = require("../utils/logger");
 class LLMClient {
-    client = null;
+    geminiClient = null;
+    openAIClient = null;
     model;
     provider;
     constructor() {
-        this.provider = process.env.LLM_PROVIDER || 'openai';
-        this.model = process.env.LLM_MODEL || env_1.config.llmModel || 'gpt-4o-mini';
-        const apiKey = process.env.LLM_API_KEY || env_1.config.llmApiKey;
-        const baseURL = process.env.LLM_BASE_URL || env_1.config.llmBaseUrl;
-        if (apiKey && apiKey.trim().length > 0 && apiKey !== 'your_api_key_here') {
-            this.client = new openai_1.default({
-                apiKey,
-                baseURL: baseURL || undefined
-            });
-            logger_1.Logger.info(`LLMClient initialized (${this.provider}, Model: ${this.model})`);
+        const apiKey = env_1.config.llmApiKey;
+        this.provider = env_1.config.llmProvider;
+        this.model = env_1.config.llmModel || 'gemini-2.5-flash';
+        const isApiKeyValid = apiKey &&
+            apiKey.trim().length > 0 &&
+            !apiKey.includes('your_api_key_here') &&
+            !apiKey.includes('your_gemini_api_key_here');
+        if (isApiKeyValid) {
+            if (this.provider === 'gemini' || apiKey.startsWith('AIza') || this.model.includes('gemini')) {
+                this.geminiClient = new genai_1.GoogleGenAI({ apiKey });
+                this.provider = 'Gemini';
+                logger_1.Logger.info(`🚀 LLMClient initialized with Gemini (Model: ${this.model})`);
+            }
+            else {
+                this.openAIClient = new openai_1.default({
+                    apiKey,
+                    baseURL: env_1.config.llmBaseUrl || undefined
+                });
+                this.provider = 'OpenAI';
+                logger_1.Logger.info(`🚀 LLMClient initialized with OpenAI (Model: ${this.model})`);
+            }
         }
         else {
             logger_1.Logger.info('LLMClient initialized in Mock/Fallback Mode (No API key configured)');
         }
     }
     async generate(systemPrompt, userMessage = '') {
-        // 1. Live LLM Execution
-        if (this.client) {
+        // 1. Live Gemini Execution
+        if (this.geminiClient) {
+            try {
+                const response = await this.geminiClient.models.generateContent({
+                    model: this.model || 'gemini-2.5-flash',
+                    contents: userMessage && userMessage.trim().length > 0 ? userMessage : 'Hello',
+                    config: {
+                        systemInstruction: systemPrompt,
+                        temperature: 0.7,
+                        maxOutputTokens: 500
+                    }
+                });
+                const reply = response.text?.trim();
+                if (reply && reply.length > 0) {
+                    return reply;
+                }
+            }
+            catch (err) {
+                logger_1.Logger.error('Gemini API call failed, switching to intelligent fallback mode:', err.message);
+            }
+        }
+        // 2. Live OpenAI Execution
+        if (this.openAIClient) {
             try {
                 const messages = [
                     { role: 'system', content: systemPrompt }
@@ -37,11 +71,11 @@ class LLMClient {
                 if (userMessage && userMessage.trim().length > 0) {
                     messages.push({ role: 'user', content: userMessage });
                 }
-                const completion = await this.client.chat.completions.create({
+                const completion = await this.openAIClient.chat.completions.create({
                     model: this.model,
                     messages,
                     temperature: 0.7,
-                    max_tokens: 300
+                    max_tokens: 500
                 });
                 const reply = completion.choices[0]?.message?.content?.trim();
                 if (reply && reply.length > 0) {
@@ -49,10 +83,10 @@ class LLMClient {
                 }
             }
             catch (err) {
-                logger_1.Logger.error('LLM API call failed, switching to intelligent fallback mode:', err.message);
+                logger_1.Logger.error('OpenAI API call failed, switching to intelligent fallback mode:', err.message);
             }
         }
-        // 2. Intelligent Deterministic Fallback Generation
+        // 3. Intelligent Deterministic Fallback Generation
         return this.generateFallbackResponse(systemPrompt, userMessage);
     }
     generateFallbackResponse(systemPrompt, userMessage) {
