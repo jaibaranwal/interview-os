@@ -40,11 +40,11 @@ class StateMachine {
                     InterviewState.FINAL_EVALUATION
                 ].includes(nextState);
             case InterviewState.FOLLOW_UP:
-                return nextState === InterviewState.QUESTION;
+                return nextState === InterviewState.QUESTION || nextState === InterviewState.FINAL_EVALUATION;
             case InterviewState.HINT:
-                return nextState === InterviewState.QUESTION || nextState === InterviewState.TOPIC_SWITCH;
+                return nextState === InterviewState.QUESTION || nextState === InterviewState.TOPIC_SWITCH || nextState === InterviewState.FINAL_EVALUATION;
             case InterviewState.TOPIC_SWITCH:
-                return nextState === InterviewState.PLANNING;
+                return nextState === InterviewState.PLANNING || nextState === InterviewState.FINAL_EVALUATION;
             case InterviewState.FINAL_EVALUATION:
                 return nextState === InterviewState.COMPLETED;
             case InterviewState.COMPLETED:

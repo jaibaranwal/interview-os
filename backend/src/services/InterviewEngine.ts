@@ -188,16 +188,6 @@ export class InterviewEngine implements IInterviewEngine {
       memory.getVisitedDays()
     );
 
-    // Transition state to PLANNING/QUESTION if needed
-    if (currentState === InterviewState.TOPIC_SWITCH) {
-      stateMachine.transitionTo(InterviewState.PLANNING);
-      currentState = stateMachine.getState();
-    }
-    if (currentState === InterviewState.PLANNING) {
-      stateMachine.transitionTo(InterviewState.QUESTION);
-      currentState = stateMachine.getState();
-    }
-
     // 6. Call PromptBuilder
     const systemPrompt = this.promptBuilder.buildSystemPrompt({
       candidate: session.candidate,
@@ -225,12 +215,25 @@ export class InterviewEngine implements IInterviewEngine {
       );
     }
 
-    // 11. Advance StateMachine to LISTENING
+    // 11. Cleanly advance StateMachine to LISTENING for the next candidate turn
     if (currentState === InterviewState.GREETING) {
       stateMachine.transitionTo(InterviewState.PLANNING);
       stateMachine.transitionTo(InterviewState.QUESTION);
       stateMachine.transitionTo(InterviewState.LISTENING);
-    } else if ([InterviewState.QUESTION, InterviewState.FOLLOW_UP, InterviewState.HINT].includes(currentState)) {
+    } else if (currentState === InterviewState.HINT) {
+      stateMachine.transitionTo(InterviewState.QUESTION);
+      stateMachine.transitionTo(InterviewState.LISTENING);
+    } else if (currentState === InterviewState.FOLLOW_UP) {
+      stateMachine.transitionTo(InterviewState.QUESTION);
+      stateMachine.transitionTo(InterviewState.LISTENING);
+    } else if (currentState === InterviewState.TOPIC_SWITCH) {
+      stateMachine.transitionTo(InterviewState.PLANNING);
+      stateMachine.transitionTo(InterviewState.QUESTION);
+      stateMachine.transitionTo(InterviewState.LISTENING);
+    } else if (currentState === InterviewState.PLANNING) {
+      stateMachine.transitionTo(InterviewState.QUESTION);
+      stateMachine.transitionTo(InterviewState.LISTENING);
+    } else if (currentState === InterviewState.QUESTION) {
       stateMachine.transitionTo(InterviewState.LISTENING);
     }
 

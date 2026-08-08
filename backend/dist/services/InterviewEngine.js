@@ -144,15 +144,6 @@ class InterviewEngine {
         }
         // Determine target day for turn
         const currentTargetDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
-        // Transition state to PLANNING/QUESTION if needed
-        if (currentState === StateMachine_1.InterviewState.TOPIC_SWITCH) {
-            stateMachine.transitionTo(StateMachine_1.InterviewState.PLANNING);
-            currentState = stateMachine.getState();
-        }
-        if (currentState === StateMachine_1.InterviewState.PLANNING) {
-            stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
-            currentState = stateMachine.getState();
-        }
         // 6. Call PromptBuilder
         const systemPrompt = this.promptBuilder.buildSystemPrompt({
             candidate: session.candidate,
@@ -173,13 +164,30 @@ class InterviewEngine {
         if (currentTargetDay && currentState !== StateMachine_1.InterviewState.GREETING) {
             memory.recordQuestion(currentTargetDay.day, currentTargetDay.objectives[0] || currentTargetDay.title, llmReply);
         }
-        // 11. Advance StateMachine to LISTENING
+        // 11. Cleanly advance StateMachine to LISTENING for the next candidate turn
         if (currentState === StateMachine_1.InterviewState.GREETING) {
             stateMachine.transitionTo(StateMachine_1.InterviewState.PLANNING);
             stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
             stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
         }
-        else if ([StateMachine_1.InterviewState.QUESTION, StateMachine_1.InterviewState.FOLLOW_UP, StateMachine_1.InterviewState.HINT].includes(currentState)) {
+        else if (currentState === StateMachine_1.InterviewState.HINT) {
+            stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
+            stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
+        }
+        else if (currentState === StateMachine_1.InterviewState.FOLLOW_UP) {
+            stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
+            stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
+        }
+        else if (currentState === StateMachine_1.InterviewState.TOPIC_SWITCH) {
+            stateMachine.transitionTo(StateMachine_1.InterviewState.PLANNING);
+            stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
+            stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
+        }
+        else if (currentState === StateMachine_1.InterviewState.PLANNING) {
+            stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
+            stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
+        }
+        else if (currentState === StateMachine_1.InterviewState.QUESTION) {
             stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
         }
         // 12. Save Session

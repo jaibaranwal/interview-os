@@ -74,27 +74,27 @@ export class ResponseEvaluator {
     );
 
     const isUncertain = detectedUncertaintyKeywords.length > 0;
-    const isShort = wordCount < 8;
-    const isDetailed = wordCount >= 25;
+    const isShort = wordCount < 4;
+    const isDetailed = wordCount >= 15;
 
     // Calculate confidence score (0.0 to 1.0)
     let score = 0.5; // Base score for non-empty response
 
     // Adjust for length
-    if (wordCount >= 25) score += 0.2;
-    else if (wordCount < 8) score -= 0.2;
+    if (wordCount >= 15) score += 0.25;
+    else if (wordCount < 4) score -= 0.3;
 
     // Adjust for confidence & uncertainty keywords
-    score += detectedConfidenceKeywords.length * 0.1;
+    score += detectedConfidenceKeywords.length * 0.15;
     score -= detectedUncertaintyKeywords.length * 0.2;
 
     const confidenceScore = Number(Math.min(1.0, Math.max(0.0, score)).toFixed(2));
 
     // Determine quality category
     let quality: 'EMPTY' | 'POOR' | 'ADEQUATE' | 'EXEMPLARY' = 'ADEQUATE';
-    if (isShort || confidenceScore < 0.3) {
+    if (isShort || confidenceScore < 0.25) {
       quality = 'POOR';
-    } else if (isDetailed && confidenceScore >= 0.7 && !isUncertain) {
+    } else if (isDetailed && confidenceScore >= 0.65 && !isUncertain) {
       quality = 'EXEMPLARY';
     }
 
