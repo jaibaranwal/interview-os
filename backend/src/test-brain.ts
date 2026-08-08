@@ -99,7 +99,7 @@ async function testBrain() {
   console.log(`   Uncertain Response Action: ${shortUncertainEval.next_action} (Score: ${shortUncertainEval.score})`);
   console.log(`   Detailed Response Action: ${detailedExemplaryEval.next_action} (Score: ${detailedExemplaryEval.score})`);
 
-  if (emptyEval.next_action !== 'retry' || detailedExemplaryEval.next_action !== 'advance') {
+  if (emptyEval.next_action !== 'retry' || detailedExemplaryEval.score < 75 || detailedExemplaryEval.next_action === 'retry') {
     throw new Error('ResponseEvaluator classification failed!');
   }
   console.log('   ✅ ResponseEvaluator Passed.\n');

@@ -1,3 +1,4 @@
+import Groq from 'groq-sdk';
 import { GoogleGenAI } from '@google/genai';
 import OpenAI from 'openai';
 import { config } from '../config/env';
@@ -8,24 +9,30 @@ export interface ILLMClient {
 }
 
 export class LLMClient implements ILLMClient {
+  private groqClient: Groq | null = null;
   private geminiClient: GoogleGenAI | null = null;
   private openAIClient: OpenAI | null = null;
   private model: string;
   private provider: string;
 
   constructor() {
-    const apiKey = config.llmApiKey;
-    this.provider = config.llmProvider;
-    this.model = config.llmModel || 'gemini-2.5-flash';
+    const apiKey = config.llmApiKey || process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || process.env.LLM_API_KEY || '';
+    this.provider = (config.llmProvider || '').toLowerCase();
+    this.model = config.llmModel || (this.provider === 'groq' || apiKey.startsWith('gsk_') ? 'llama-3.3-70b-versatile' : 'gemini-2.5-flash');
 
     const isApiKeyValid =
       apiKey &&
       apiKey.trim().length > 0 &&
       !apiKey.includes('your_api_key_here') &&
-      !apiKey.includes('your_gemini_api_key_here');
+      !apiKey.includes('your_gemini_api_key_here') &&
+      !apiKey.includes('gsk_...');
 
     if (isApiKeyValid) {
-      if (this.provider === 'gemini' || apiKey.startsWith('AIza') || this.model.includes('gemini')) {
+      if (this.provider === 'groq' || apiKey.startsWith('gsk_')) {
+        this.groqClient = new Groq({ apiKey });
+        this.provider = 'Groq';
+        Logger.info(`🚀 Groq initialized (Model: ${this.model})`);
+      } else if (this.provider === 'gemini' || apiKey.startsWith('AIza') || this.model.includes('gemini')) {
         this.geminiClient = new GoogleGenAI({ apiKey });
         this.provider = 'Gemini';
         Logger.info(`🚀 LLMClient initialized with Gemini (Model: ${this.model})`);
@@ -45,11 +52,73 @@ export class LLMClient implements ILLMClient {
   public async generate(systemPrompt: string, userMessage: string = ''): Promise<string> {
     const isJsonRequest = systemPrompt.toLowerCase().includes('json');
 
-    // 1. Live Gemini Execution
+    // 1. Live Groq Execution
+    if (this.groqClient) {
+      console.log("🔥 GROQ REQUEST");
+      console.log({
+        model: this.model || 'llama-3.3-70b-versatile',
+        endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+        provider: 'Groq',
+        userMessage: userMessage || '(evaluation request)'
+      });
+
+      try {
+        const userPrompt = userMessage && userMessage.trim().length > 0
+          ? userMessage
+          : (isJsonRequest ? 'Evaluate the candidate response and output valid JSON.' : 'Begin response.');
+
+        let completion;
+        try {
+          completion = await this.groqClient.chat.completions.create({
+            model: this.model || 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: isJsonRequest ? 0.2 : 0.3,
+            max_completion_tokens: 600,
+            ...(isJsonRequest ? { response_format: { type: 'json_object' } } : {})
+          });
+        } catch (rateErr: any) {
+          if (rateErr?.status === 429) {
+            console.log('⏳ Groq TPM rate limit hit on 70B model, retrying with llama-3.1-8b-instant...');
+            completion = await this.groqClient.chat.completions.create({
+              model: 'llama-3.1-8b-instant',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+              ],
+              temperature: isJsonRequest ? 0.2 : 0.3,
+              max_completion_tokens: 600,
+              ...(isJsonRequest ? { response_format: { type: 'json_object' } } : {})
+            });
+          } else {
+            throw rateErr;
+          }
+        }
+
+        const reply = completion.choices[0]?.message?.content?.trim();
+        if (reply && reply.length > 0) {
+          console.log("🔥 GROQ RESPONSE:");
+          console.log(`"${reply.slice(0, 150)}${reply.length > 150 ? '...' : ''}"\n`);
+          return reply;
+        }
+      } catch (err: any) {
+        console.error("❌ GROQ ERROR");
+        console.error(JSON.stringify(err, null, 2));
+        Logger.error('Groq API call failed, switching to intelligent fallback mode:', err.message);
+      }
+    }
+
+
+    // 2. Live Gemini Execution
     if (this.geminiClient) {
-      console.log('🔥 GEMINI CALLED');
-      console.log('   - Model:', this.model);
-      console.log('   - User Input:', userMessage || '(empty / system evaluation request)');
+      console.log("🔥 GEMINI REQUEST");
+      console.log({
+        model: this.model || 'gemini-2.5-flash',
+        endpoint: 'generativelanguage.googleapis.com',
+        provider: this.provider,
+      });
 
       try {
         const contentsText = userMessage && userMessage.trim().length > 0
@@ -74,12 +143,13 @@ export class LLMClient implements ILLMClient {
           return reply;
         }
       } catch (err: any) {
-        console.error('❌ GEMINI API CALL FAILED:', err.message);
+        console.error("🔥 FULL GEMINI ERROR");
+        console.error(JSON.stringify(err, null, 2));
         Logger.error('Gemini API call failed, switching to intelligent fallback mode:', err.message);
       }
     }
 
-    // 2. Live OpenAI Execution
+    // 3. Live OpenAI Execution
     if (this.openAIClient) {
       console.log('🔥 OPENAI CALLED');
       try {
