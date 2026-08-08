@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test:phase1": "ts-node src/test-phase1.ts",
-    "test:phase2": "ts-node src/test-phase2.ts"
+    "test:phase2": "ts-node src/test-phase2.ts",
+    "test:brain": "ts-node src/test-brain.ts"
   },
   "keywords": [],
   "author": "",

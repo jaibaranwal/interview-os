@@ -1,4 +1,3 @@
-// Future responsibility: Finite State Machine managing 10 interview states and state transitions
 export enum InterviewState {
   GREETING = 'GREETING',
   PLANNING = 'PLANNING',
@@ -13,9 +12,67 @@ export enum InterviewState {
 }
 
 export class StateMachine {
-  private currentState: InterviewState = InterviewState.GREETING;
+  private currentState: InterviewState;
+
+  constructor(initialState: InterviewState = InterviewState.GREETING) {
+    this.currentState = initialState;
+  }
 
   public getState(): InterviewState {
     return this.currentState;
+  }
+
+  public canTransitionTo(nextState: InterviewState): boolean {
+    switch (this.currentState) {
+      case InterviewState.GREETING:
+        return nextState === InterviewState.PLANNING;
+
+      case InterviewState.PLANNING:
+        return nextState === InterviewState.QUESTION;
+
+      case InterviewState.QUESTION:
+        return nextState === InterviewState.LISTENING;
+
+      case InterviewState.LISTENING:
+        return nextState === InterviewState.EVALUATING;
+
+      case InterviewState.EVALUATING:
+        return [
+          InterviewState.FOLLOW_UP,
+          InterviewState.HINT,
+          InterviewState.TOPIC_SWITCH,
+          InterviewState.FINAL_EVALUATION
+        ].includes(nextState);
+
+      case InterviewState.FOLLOW_UP:
+        return nextState === InterviewState.QUESTION;
+
+      case InterviewState.HINT:
+        return nextState === InterviewState.QUESTION || nextState === InterviewState.TOPIC_SWITCH;
+
+      case InterviewState.TOPIC_SWITCH:
+        return nextState === InterviewState.PLANNING;
+
+      case InterviewState.FINAL_EVALUATION:
+        return nextState === InterviewState.COMPLETED;
+
+      case InterviewState.COMPLETED:
+        return false; // Terminal state
+
+      default:
+        return false;
+    }
+  }
+
+  public transitionTo(nextState: InterviewState): InterviewState {
+    if (!this.canTransitionTo(nextState)) {
+      throw new Error(`Invalid state transition from '${this.currentState}' to '${nextState}'.`);
+    }
+    this.currentState = nextState;
+    return this.currentState;
+  }
+
+  public isComplete(): boolean {
+    return this.currentState === InterviewState.COMPLETED;
   }
 }
