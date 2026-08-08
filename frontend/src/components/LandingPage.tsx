@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Sparkles, ArrowRight, ShieldCheck, Target, Layers, Brain, Activity, Terminal, Users, Database, Code, FileText, Zap } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Brain, Users, BookOpen, MessageSquare, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface LandingPageProps {
@@ -11,8 +11,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onStartInterview,
   onOpenCandidateDrawer
 }) => {
-  const scrollToArchitecture = () => {
-    const el = document.getElementById('architecture-section');
+  const scrollToIntelligenceFlow = () => {
+    const el = document.getElementById('intelligence-flow-section');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -94,7 +94,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <motion.button
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
-              onClick={scrollToArchitecture}
+              onClick={scrollToIntelligenceFlow}
               style={{
                 padding: '14px 24px',
                 borderRadius: '16px',
@@ -106,13 +106,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 cursor: 'pointer'
               }}
             >
-              View System Architecture
+              View Intelligence Flow
             </motion.button>
           </div>
         </motion.div>
       </section>
 
-      {/* 2. Task 4: Animated Interview Journey Timeline Widget */}
+      {/* 2. Animated Interview Journey Timeline Widget */}
       <section style={{ margin: '0 auto 60px auto', padding: '0 20px' }}>
         <div className="glass-card" style={{ padding: '24px 32px', background: 'rgba(16, 23, 40, 0.7)', border: '1px solid rgba(79, 140, 255, 0.2)' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -155,57 +155,107 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 3. Feature Cards Grid */}
-      <section style={{ margin: '0 auto 60px auto', padding: '0 20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+      {/* 3. PROMPT 35 REFINEMENT: Interview Intelligence Flow Section */}
+      <section id="intelligence-flow-section" style={{ margin: '0 auto 60px auto', padding: '0 20px' }}>
+        <div className="glass-card" style={{ padding: '40px 36px', background: 'rgba(16, 23, 40, 0.85)', border: '1px solid rgba(0, 229, 255, 0.25)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#00E5FF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              REASONING ENGINE ARCHITECTURE
+            </span>
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#FFFFFF', marginTop: '6px' }}>
+              Interview Intelligence Flow
+            </h2>
+            <p style={{ fontSize: '0.95rem', color: '#94A3B8', marginTop: '8px', maxWidth: '750px', margin: '8px auto 0 auto' }}>
+              How InterviewOS reasons through a complete technical interview before making an evidence-backed hiring recommendation.
+            </p>
+          </div>
+
+          {/* Flow Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            {[
+              { step: '01', title: 'Candidate Profile', desc: 'Initial candidate background & seniority scoring', color: '#7DD3FC' },
+              { step: '02', title: 'Curriculum Analysis', desc: '31-day AI Cohort completed & skipped missions', color: '#38BDF8' },
+              { step: '03', title: 'Adaptive Planning', desc: 'Deterministic topic selection prioritizing weak areas', color: '#4F8CFF' },
+              { step: '04', title: 'Live Technical Interview', desc: 'State-machine driven adaptive question turns', color: '#00E5FF' },
+              { step: '05', title: 'Conversation Memory', desc: 'Multi-turn tracking of strengths, mistakes, and answers', color: '#818CF8' },
+              { step: '06', title: 'Dynamic Probing', desc: 'Progressive probing on good answers (basic → impl → trade-offs)', color: '#A855F7' },
+              { step: '07', title: 'Evidence Collection', desc: 'Keyword verification & concept detection without false strengths', color: '#EC4899' },
+              { step: '08', title: 'Competency Evaluation', desc: '1–5 scale scoring across Technical, Impl, Arch, Trade-offs, Comm', color: '#F59E0B' },
+              { step: '09', title: 'Executive Recommendation', desc: 'Evidence-backed panel decision & 5-star topic ratings', color: '#10B981' }
+            ].map((flowNode, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ scale: 1.03, translateY: -4 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  background: 'rgba(5, 8, 22, 0.8)',
+                  border: `1px solid ${flowNode.color}35`,
+                  borderRadius: '16px',
+                  padding: '20px 18px',
+                  position: 'relative',
+                  boxShadow: `0 8px 24px -10px ${flowNode.color}20`
+                }}
+              >
+                <div style={{ fontSize: '0.72rem', fontWeight: 900, color: flowNode.color, marginBottom: '6px' }}>
+                  STAGE {flowNode.step}
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '6px' }}>
+                  {flowNode.title}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#94A3B8', lineHeight: '1.45' }}>
+                  {flowNode.desc}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. PROMPT 35 REQUIREMENT: 5 Premium Capability Cards */}
+      <section style={{ margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-            Engineered for Industrial AI Technical Evaluation
+            Core AI Intelligence Capabilities
           </h2>
           <p style={{ fontSize: '0.95rem', color: '#94A3B8', marginTop: '6px' }}>
-            Every component built to emulate senior principal interviewers at FAANG companies.
+            Five foundational pillars powering InterviewOS autonomous technical evaluations.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
           {[
             {
-              icon: Target,
-              title: 'Adaptive AI Interview Engine',
-              desc: '10-state finite state machine with dynamic difficulty scaling, topic switching, and repeat-question intent handling.',
+              icon: Brain,
+              title: 'Adaptive Reasoning',
+              desc: 'Generates intelligent follow-up questions based on previous answers.',
               color: '#00E5FF'
             },
             {
-              icon: Layers,
-              title: 'Real-time Competency Scoring',
-              desc: 'Evaluates candidates across Technical Understanding, Practical Implementation, System Architecture, Trade-offs, and Communication.',
+              icon: BookOpen,
+              title: 'Curriculum Awareness',
+              desc: "Grounds every interview in the candidate's completed AI Cohort journey.",
               color: '#4F8CFF'
             },
             {
-              icon: ShieldCheck,
-              title: 'Executive Hiring Dashboard',
-              desc: 'Generates evidence-backed hiring reports with 5-star topic ratings, session statistics, and hiring panel decisions.',
-              color: '#10B981'
-            },
-            {
-              icon: Brain,
-              title: 'Evidence-Based Evaluation',
-              desc: 'Cumulative evidence weighting ensures later strong answers outweigh early uncertainty without inventing false strengths.',
+              icon: MessageSquare,
+              title: 'Multi-turn Memory',
+              desc: 'Maintains interview context, remembers strengths, mistakes, and previous answers.',
               color: '#A855F7'
             },
             {
-              icon: Activity,
-              title: 'Curriculum-Aware Grounding',
-              desc: 'Enforces strict day grounding and 4 runtime assertion guards to prevent topic leakage across 31 curriculum days.',
-              color: '#F59E0B'
+              icon: ShieldCheck,
+              title: 'Evidence-Based Evaluation',
+              desc: 'Hiring decisions are generated from accumulated interview evidence rather than isolated responses.',
+              color: '#10B981'
             },
             {
-              icon: Terminal,
-              title: 'Production SaaS Cockpit UI',
-              desc: 'Built with React, Vite, Framer Motion, and dark obsidian glassmorphism for smooth 60fps presentation.',
-              color: '#7DD3FC'
+              icon: Award,
+              title: 'Executive Hiring Report',
+              desc: 'Produces competency scores, evidence-backed strengths, focused learning roadmap, and hiring recommendation.',
+              color: '#F59E0B'
             }
-          ].map((card, idx) => {
-            const IconComp = card.icon;
+          ].map((cap, idx) => {
+            const CapIcon = cap.icon;
             return (
               <motion.div
                 key={idx}
@@ -214,83 +264,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 style={{
                   padding: '24px',
                   background: 'rgba(16, 23, 40, 0.75)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                  border: `1px solid ${cap.color}30`
                 }}
               >
                 <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: `${card.color}15`,
-                  border: `1px solid ${card.color}35`,
-                  color: card.color,
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '14px',
+                  background: `${cap.color}15`,
+                  border: `1px solid ${cap.color}35`,
+                  color: cap.color,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '16px'
                 }}>
-                  <IconComp size={22} />
+                  <CapIcon size={24} />
                 </div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>
-                  {card.title}
+                  {cap.title}
                 </h3>
                 <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: '1.6' }}>
-                  {card.desc}
+                  {cap.desc}
                 </p>
               </motion.div>
             );
           })}
-        </div>
-      </section>
-
-      {/* 4. Task 2: Architecture Pipeline Section */}
-      <section id="architecture-section" style={{ margin: '0 auto', padding: '0 20px' }}>
-        <div className="glass-card" style={{ padding: '36px 32px', background: 'rgba(16, 23, 40, 0.85)', border: '1px solid rgba(0, 229, 255, 0.25)' }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#00E5FF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              TECHNICAL SYSTEM ARCHITECTURE
-            </span>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF', marginTop: '6px' }}>
-              End-to-End Autonomous AI Orchestration Pipeline
-            </h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-            {[
-              { icon: Users, title: 'Candidate Profile', desc: 'Seniority scoring & mission history' },
-              { icon: Code, title: 'React Frontend', desc: 'Floating composer & 60fps cockpit' },
-              { icon: Cpu, title: 'Interview Engine', desc: '10-state state machine manager' },
-              { icon: Database, title: 'Conversation Memory', desc: 'Multi-turn context & mistake tracking' },
-              { icon: Sparkles, title: 'Question Generator', desc: '4 runtime assertion guards' },
-              { icon: Zap, title: 'Groq LLM', desc: 'llama-3.1-8b-instant inference' },
-              { icon: Activity, title: 'Response Evaluator', desc: 'Fast-path + LLM evaluation' },
-              { icon: Layers, title: 'Competency Engine', desc: '1–5 scale 5-dimension scoring' },
-              { icon: FileText, title: 'Executive Report', desc: 'Evidence-backed panel decision' }
-            ].map((node, idx) => {
-              const NodeIcon = node.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  whileHover={{ scale: 1.02 }}
-                  style={{
-                    background: 'rgba(5, 8, 22, 0.8)',
-                    border: '1px solid rgba(79, 140, 255, 0.25)',
-                    borderRadius: '14px',
-                    padding: '18px',
-                    position: 'relative'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(0, 229, 255, 0.15)', color: '#00E5FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <NodeIcon size={16} />
-                    </div>
-                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#FFFFFF' }}>{node.title}</span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: '#94A3B8', lineHeight: '1.4' }}>{node.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
         </div>
       </section>
 

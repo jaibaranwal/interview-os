@@ -6,72 +6,58 @@ InterviewOS is an autonomous, adaptive AI Technical Interviewer engineered for e
 
 ---
 
-## 🚀 Problem & Solution
+## 🏗️ Technical System Architecture
 
-### The Problem
-Traditional technical interviews suffer from high human interviewer variance, superficial keyword-matching automated bots, rigid static question banks, and uninformative pass/fail reports that fail to measure actual engineering competency.
-
-### The Solution: InterviewOS
-- **Adaptive State Machine Brain**: Dynamically transitions across 10 interview states (`GREETING`, `LISTENING`, `EVALUATING`, `FOLLOW_UP`, `TOPIC_SWITCH`, `FINAL_EVALUATION`, `COMPLETED`).
-- **Progressive Probing**: When a candidate answers correctly, the engine probes implementation details (`basic` → `implementation` → `trade-offs`) for 1 turn before moving to the next topic.
-- **Evidence-Based Competency Scoring**: Evaluates candidates on a 1–5 scale across 5 core dimensions:
-  1. *Technical Understanding*
-  2. *Practical Implementation*
-  3. *System Design / Architecture*
-  4. *Trade-off Analysis*
-  5. *Communication Quality*
-- **Executive Hiring Panel Reports**: Generates evidence-backed hiring reports with 5-star topic ratings, session statistics, and hiring panel decisions.
-
----
-
-## 🏗️ System Architecture
+The full technical implementation pipeline is designed for scalability, zero prompt leakage, and strict state machine-driven interview turns.
 
 ```mermaid
 flowchart TD
-    A[Candidate Profile] --> B[React Frontend Cockpit]
-    B --> C[Interview Engine]
-    C --> D[Interview State Machine]
-    C --> E[Conversation Memory]
-    C --> F[Question Generator]
-    F --> G[Runtime Assertion Guards]
+    A[Candidate Profile] --> B[React + Vite Frontend]
+    B --> C[Express Node.js Backend]
+    C --> D[Interview Engine]
+    D --> E[Interview State Machine]
+    D --> F[Conversation Memory]
+    D --> G[Adaptive Question Generator]
     G --> H[Groq LLM llama-3.1-8b]
     H --> I[Response Evaluator]
     I --> J[Competency Engine]
-    J --> K[Executive Hiring Report]
+    J --> K[Executive Report Engine]
 ```
 
-### Architecture Pipeline Breakdown
-1. **Candidate Profile**: Evaluates candidate seniority ($S \in [1.0, 5.0]$) and classifies completed/skipped missions.
-2. **React Frontend Cockpit**: Built with React, Vite, TypeScript, Tailwind/Glassmorphism CSS, and Framer Motion.
-3. **Interview Engine**: Core orchestrator coordinating turn execution without hardcoded prompt leakage.
-4. **Conversation Memory**: Stateful memory tracking visited days, asked objectives, turn histories, detected mistakes, strengths, and weaknesses.
-5. **Question Generator & Assertion Guards**: Enforces 4 runtime assertions (topic grounding, no topic leakage, prompt diversity across last 3 turns, follow-up phrase guard).
-6. **Groq LLM Inference**: High-speed inference using `llama-3.1-8b-instant` with automatic retry logic.
-7. **Response Evaluator**: Dual-engine evaluator (Fast-path regex + LLM) classifying responses into 9 buckets (`EXCELLENT`, `GOOD`, `WEAK`, `UNCERTAIN`, `GIBBERISH`, `OFF_TOPIC`, `PROFANITY`, `REFUSAL`, `LACK_OF_EXPERIENCE`).
-8. **Competency Engine & Hiring Report**: Calculates 1–5 scale competency scores, topic-level 5-star ratings, and evidence-backed hiring panel decisions.
+### Architecture Component Breakdown
+- **React + Vite Frontend**: High-performance 60fps dark obsidian UI built with Tailwind/Glassmorphism CSS, Lucide icons, and Framer Motion microinteractions.
+- **Express Node.js Backend**: REST API orchestrator handling session memory and stateful turn execution (`POST /api/interview`, `GET /api/candidates`, `GET /health`).
+- **Interview State Machine**: 10-state finite state machine (`GREETING`, `PLANNING`, `QUESTION`, `LISTENING`, `EVALUATING`, `FOLLOW_UP`, `HINT`, `TOPIC_SWITCH`, `FINAL_EVALUATION`, `COMPLETED`).
+- **Adaptive Question Generator**: Synthesizes grounded interviewer prompts enforcing 4 runtime assertion guards (curriculum topic grounding, no topic leakage, prompt diversity across last 3 turns, follow-up phrase guard).
+- **Conversation Memory**: Stateful memory tracking visited days, asked objectives, candidate answer history, detected mistakes, strengths, and weaknesses.
+- **Competency Engine**: Calculates evidence-weighted 1–5 scale scores across Technical Understanding, Practical Implementation, Architecture, Trade-offs, and Communication.
+- **Executive Report Engine**: Compiles evidence-backed hiring panel decisions, 5-star topic evaluation grids, verified strengths, specific missing concepts, and weak-area growth roadmaps.
+
+---
+
+## 💡 Interview Intelligence Flow
+
+How InterviewOS reasons through a complete technical interview:
+
+1. **Candidate Profile**: Evaluates background and seniority ($S \in [1.0, 5.0]$).
+2. **Curriculum Analysis**: Inspects completed and skipped missions across the 31-Day AI Cohort.
+3. **Adaptive Interview Planning**: Constructs deterministic day target plans prioritizing candidate weak areas.
+4. **Live Technical Interview**: Conducts multi-turn dialogue with real-time cockpit meters.
+5. **Conversation Memory**: Remembers previous turns, mistakes, and demonstrated concepts.
+6. **Dynamic Follow-up Reasoning**: Applies progressive probing on good answers (`basic` → `implementation` → `trade-offs`).
+7. **Evidence Collection**: Verifies technical concept proofs without inventing false strengths.
+8. **Competency Evaluation**: Scores 5 core dimensions on a 1–5 scale.
+9. **Executive Hiring Recommendation**: Delivers hiring panel decisions and actionable growth roadmaps.
 
 ---
 
 ## 🌟 Key Differentiators & Features
 
-1. **Deterministic Interview Brain**:
-   - **CandidateAnalyzer**: Scores candidate seniority and mission progress.
-   - **InterviewPlanner**: Guarantees coverage across at least 4 curriculum days and minimum 8 questions.
-   - **ResponseEvaluator**: Classifies responses deterministically.
-
-2. **Executive Hiring Panel Dashboard**:
-   - Overall Star Rating (`★★★★★`)
-   - Hiring Panel Decision Breakdown (Technical, Architecture, Communication, Overall)
-   - 1–5 Competency Scorecard
-   - Session Interview Statistics
-   - Evidence-Backed Strengths (max 3) & Specific Missing Concepts (max 5)
-   - Focused Growth Roadmap (max 3 weak-area items)
-
-3. **High-Tech SaaS UI (OpenAI × Linear × Apple Quality)**:
-   - Dark obsidian background (`#050816`) with low-opacity animated gradient mesh.
-   - 60fps Framer Motion microinteractions and transitions.
-   - Interactive Candidate Profile Selector Drawer.
-   - Real-time cockpit tracking difficulty meters, question progress, and FSM state indicators.
+1. **Adaptive Reasoning**: Generates intelligent follow-up questions based on previous answers.
+2. **Curriculum Awareness**: Grounds every interview in the candidate's completed AI Cohort journey.
+3. **Multi-turn Memory**: Maintains interview context, remembers strengths, mistakes, and previous answers.
+4. **Evidence-Based Evaluation**: Hiring decisions are generated from accumulated interview evidence rather than isolated responses.
+5. **Executive Hiring Report**: Produces 1-5 competency scores, evidence-backed strengths, focused learning roadmap, and hiring recommendation.
 
 ---
 
@@ -132,7 +118,7 @@ npm run test:e2e
 
 ## 🎯 Hackathon Presentation Demo Flow
 
-1. **Landing Overview**: Present the Hero section, Animated Interview Journey Timeline (`Greeting` → `Questions` → `Probing` → `Analysis` → `Decision`), and Architecture section.
+1. **Landing Overview**: Present the Hero section, Animated Interview Journey Timeline, Interview Intelligence Flow, and Core AI Capabilities.
 2. **Select Candidate**: Open the Candidate Selector Drawer and pick any of the 20 cohort profiles.
 3. **Live Interview Session**:
    - Candidate submits technical answers in the floating composer.
