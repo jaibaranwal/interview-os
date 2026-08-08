@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Search, UserCheck, Award, Briefcase, GraduationCap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Search, UserCheck, Award, Briefcase, GraduationCap, UserX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CandidateProfile } from '../types';
 
@@ -19,6 +19,17 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
   onSelectCandidate
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Accessibility: Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -56,6 +67,9 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="glass-card"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Candidate Cohort Selector"
           style={{
             width: '100%',
             maxWidth: '980px',
@@ -84,12 +98,13 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                 </span>
               </h2>
               <p style={{ fontSize: '0.84rem', color: '#94A3B8', marginTop: '3px' }}>
-                Select a candidate profile to test the adaptive InterviewOS intelligence engine.
+                Select a candidate profile to test the adaptive InterviewOS intelligence engine. (Press <strong>Esc</strong> to close)
               </p>
             </div>
 
             <button
               onClick={onClose}
+              aria-label="Close Candidate Drawer"
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -113,6 +128,7 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
               <Search size={18} color="#64748B" style={{ position: 'absolute', left: '16px', top: '14px' }} />
               <input
                 type="text"
+                aria-label="Search candidates"
                 placeholder="Search candidate by name, job role (e.g. AI Engineer, Data Scientist)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -137,105 +153,113 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '18px'
           }}>
-            {filteredCandidates.map((c) => {
-              const isSelected = c.member.id === selectedCandidateId;
-              const completedCount = c.missions.filter((m) => m.passed).length;
-              const initials = getInitials(c.member.name);
+            {filteredCandidates.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 20px', color: '#94A3B8' }}>
+                <UserX size={40} color="#64748B" style={{ marginBottom: '12px' }} />
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF' }}>No matching candidates found</h4>
+                <p style={{ fontSize: '0.84rem', marginTop: '4px' }}>Try searching by role such as "Backend", "AI Engineer", or "Data Scientist".</p>
+              </div>
+            ) : (
+              filteredCandidates.map((c) => {
+                const isSelected = c.member.id === selectedCandidateId;
+                const completedCount = c.missions.filter((m) => m.passed).length;
+                const initials = getInitials(c.member.name);
 
-              return (
-                <motion.div
-                  key={c.member.id}
-                  whileHover={{ scale: 1.02, translateY: -3 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    onSelectCandidate(c);
-                    onClose();
-                  }}
-                  style={{
-                    background: isSelected
-                      ? 'linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(79, 140, 255, 0.15))'
-                      : 'rgba(15, 23, 42, 0.75)',
-                    border: isSelected
-                      ? '2px solid #00E5FF'
-                      : '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '16px',
-                    padding: '18px',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    boxShadow: isSelected ? '0 0 24px rgba(0, 229, 255, 0.25)' : 'none',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {isSelected && (
+                return (
+                  <motion.div
+                    key={c.member.id}
+                    whileHover={{ scale: 1.02, translateY: -3 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      onSelectCandidate(c);
+                      onClose();
+                    }}
+                    style={{
+                      background: isSelected
+                        ? 'linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(79, 140, 255, 0.15))'
+                        : 'rgba(15, 23, 42, 0.75)',
+                      border: isSelected
+                        ? '2px solid #00E5FF'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      boxShadow: isSelected ? '0 0 24px rgba(0, 229, 255, 0.25)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {isSelected && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '14px',
+                        right: '14px',
+                        background: '#00E5FF',
+                        color: '#030712',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 0 10px #00E5FF'
+                      }}>
+                        <UserCheck size={15} />
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        background: isSelected ? 'linear-gradient(135deg, #00E5FF, #4F8CFF)' : 'rgba(79, 140, 255, 0.18)',
+                        border: '1px solid rgba(0, 229, 255, 0.3)',
+                        color: isSelected ? '#FFFFFF' : '#7DD3FC',
+                        fontSize: '0.95rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {initials}
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
+                          {c.member.name}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                          ID: {c.member.id}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.82rem', color: '#7DD3FC', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                      <Briefcase size={14} /> {c.member.jobRole} ({c.member.yearsExperience} yrs exp)
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+                      <GraduationCap size={14} /> {c.member.education}
+                    </div>
+
                     <div style={{
-                      position: 'absolute',
-                      top: '14px',
-                      right: '14px',
-                      background: '#00E5FF',
-                      color: '#030712',
-                      borderRadius: '50%',
-                      width: '24px',
-                      height: '24px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 0 10px #00E5FF'
+                      justifyContent: 'space-between',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                      fontSize: '0.75rem'
                     }}>
-                      <UserCheck size={15} />
+                      <span style={{ color: '#94A3B8' }}>Missions Completed</span>
+                      <span style={{ fontWeight: 800, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Award size={14} /> {completedCount} / {c.missions.length}
+                      </span>
                     </div>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      background: isSelected ? 'linear-gradient(135deg, #00E5FF, #4F8CFF)' : 'rgba(79, 140, 255, 0.18)',
-                      border: '1px solid rgba(0, 229, 255, 0.3)',
-                      color: isSelected ? '#FFFFFF' : '#7DD3FC',
-                      fontSize: '0.95rem',
-                      fontWeight: 800,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {initials}
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
-                        {c.member.name}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-                        ID: {c.member.id}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: '0.82rem', color: '#7DD3FC', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                    <Briefcase size={14} /> {c.member.jobRole} ({c.member.yearsExperience} yrs exp)
-                  </div>
-
-                  <div style={{ fontSize: '0.78rem', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-                    <GraduationCap size={14} /> {c.member.education}
-                  </div>
-
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingTop: '12px',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                    fontSize: '0.75rem'
-                  }}>
-                    <span style={{ color: '#94A3B8' }}>Missions Completed</span>
-                    <span style={{ fontWeight: 800, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Award size={14} /> {completedCount} / {c.missions.length}
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })
+            )}
           </div>
         </motion.div>
       </div>

@@ -2,11 +2,11 @@
 
 :root {
   --bg-dark: #030712;
-  --bg-card: rgba(15, 23, 42, 0.8);
-  --bg-card-hover: rgba(30, 41, 59, 0.9);
-  --bg-glass: rgba(15, 23, 42, 0.65);
+  --bg-card: rgba(15, 23, 42, 0.82);
+  --bg-card-hover: rgba(30, 41, 59, 0.95);
+  --bg-glass: rgba(15, 23, 42, 0.7);
   --border-glass: rgba(255, 255, 255, 0.1);
-  --border-glow: rgba(0, 229, 255, 0.4);
+  --border-glow: rgba(0, 229, 255, 0.45);
 
   --primary: #4F8CFF;
   --secondary: #7DD3FC;
@@ -46,6 +46,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Background Grid Pattern */
+.bg-grid-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(rgba(0, 229, 255, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 80%);
+  pointer-events: none;
+}
+
 /* Aurora & Floating Particles Background Mesh */
 .bg-mesh-container {
   position: fixed;
@@ -63,10 +77,10 @@ body {
   position: absolute;
   top: -10%;
   left: 20%;
-  width: 600px;
-  height: 600px;
+  width: 650px;
+  height: 650px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 229, 255, 0.15) 0%, rgba(79, 140, 255, 0.05) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.18) 0%, rgba(79, 140, 255, 0.06) 50%, transparent 70%);
   filter: blur(90px);
   animation: auroraFloat 22s ease-in-out infinite alternate;
 }
@@ -75,10 +89,10 @@ body {
   position: absolute;
   bottom: -15%;
   right: 15%;
-  width: 700px;
-  height: 700px;
+  width: 750px;
+  height: 750px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.04) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.16) 0%, rgba(236, 72, 153, 0.05) 50%, transparent 70%);
   filter: blur(100px);
   animation: auroraFloat 28s ease-in-out infinite alternate-reverse;
 }
@@ -87,10 +101,10 @@ body {
   position: absolute;
   top: 40%;
   left: 45%;
-  width: 450px;
-  height: 450px;
+  width: 500px;
+  height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 60%);
   filter: blur(80px);
   animation: auroraFloat 18s ease-in-out infinite alternate;
 }
@@ -107,19 +121,19 @@ body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-glass);
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
 }
 
 .glass-card-hover:hover {
-  border-color: rgba(0, 229, 255, 0.4);
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 229, 255, 0.18);
-  transform: translateY(-3px);
+  border-color: rgba(0, 229, 255, 0.45);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 229, 255, 0.2);
+  transform: translateY(-4px);
 }
 
 .glass-pill {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-glass);
@@ -169,8 +183,8 @@ body {
 /* Code Snippet Block Styling */
 .code-block-container {
   font-family: var(--font-mono);
-  background: #090D16;
-  border: 1px solid rgba(79, 140, 255, 0.25);
+  background: #080D1A;
+  border: 1px solid rgba(79, 140, 255, 0.3);
   border-radius: 12px;
   padding: 14px 18px;
   font-size: 0.88rem;
@@ -178,7 +192,7 @@ body {
   line-height: 1.5;
   overflow-x: auto;
   margin: 10px 0;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
 }
 
 /* Custom Scrollbars */
@@ -205,39 +219,30 @@ button {
   outline: none;
 }
 
-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-textarea, input {
-  font-family: var(--font-sans);
-  outline: none;
-}
-
-textarea:focus-visible, input:focus-visible {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.25) !important;
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
 }
 
 /* Animations */
 @keyframes typingDots {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40% { transform: scale(1.1); opacity: 1; }
+  40% { transform: scale(1.15); opacity: 1; }
 }
 
 .animate-typing-dot {
   animation: typingDots 1.4s ease-in-out infinite;
 }
 
-/* Shimmer Loading Effect */
-.shimmer-loading {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.03) 100%);
+/* Skeleton Loading Shimmer */
+.skeleton-box {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
+  animation: skeletonShimmer 1.8s infinite;
+  border-radius: 8px;
 }
 
-@keyframes shimmer {
+@keyframes skeletonShimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
