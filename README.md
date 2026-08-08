@@ -200,6 +200,12 @@ npm run test:e2e
 
 ---
 
+## 📚 Development Documentation
+
+The complete prompt engineering journey is documented in [`PROMPTS.md`](PROMPTS.md), providing a chronological record of the iterative development process behind InterviewOS.
+
+---
+
 <p align="center">
   <b>InterviewOS</b> — Engineered for the AI Engineering Cohort Hackathon.
 </p>
