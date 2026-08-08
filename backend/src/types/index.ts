@@ -75,15 +75,35 @@ export interface TopicPerformanceRecord {
   score: number; // 1-5
 }
 
+export interface InterviewStatistics {
+  questionsAsked: number;
+  goodAnswersCount: number;
+  weakAnswersCount: number;
+  adaptiveFollowupsCount: number;
+  topicsVisitedCount: number;
+  averageResponseQuality: string; // e.g. "82%"
+  confidence: 'High' | 'Medium' | 'Low' | string;
+}
+
+export interface PanelDecision {
+  technicalInterview: 'Strong Hire' | 'Hire' | 'Lean Hire' | 'Weak Pass' | 'No Hire';
+  architectureReview: 'Strong Hire' | 'Hire' | 'Lean Hire' | 'Weak Pass' | 'No Hire';
+  communication: 'Strong' | 'Satisfactory' | 'Needs Improvement';
+  overallRecommendation: 'Strong Hire' | 'Hire' | 'Lean Hire' | 'Weak Pass' | 'No Hire';
+  overallStars: string;
+}
+
 export interface FeedbackObject {
   summary: string;
   competencyScores?: CompetencyScores;
-  strengths: string[];
-  gaps: string[];
-  next: string[];
+  strengths: string[]; // max 3 evidence-backed strengths
+  gaps: string[]; // max 5 specific missing concept weaknesses
+  next: string[]; // max 3 weak-area growth items
   topicPerformance?: TopicPerformanceRecord[];
   hiringRecommendation?: 'Strong Hire' | 'Hire' | 'Lean Hire' | 'Weak Pass' | 'No Hire' | string;
   confidence?: 'High' | 'Medium' | 'Low' | string;
+  statistics?: InterviewStatistics;
+  panelDecision?: PanelDecision;
   communicationAssessment?: string;
   topicsDemonstrated?: string[];
   topicsSkipped?: string[];

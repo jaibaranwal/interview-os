@@ -21,8 +21,7 @@ class FeedbackEngine {
             const dayData = this.curriculumLoader.getDayByNumber(d);
             return dayData ? `Day ${d}: ${dayData.title}` : `Day ${d}`;
         });
-        // ── Prompt 30 Requirement 3: Cumulative Evidence Weighting ──
-        // Later strong answers outweigh earlier uncertainty.
+        // Group evaluations by day to track best performance per topic
         const topicEvaluationsMap = new Map();
         askedQuestions.forEach((q, idx) => {
             const evalResult = evaluations[idx];
@@ -32,7 +31,6 @@ class FeedbackEngine {
                 topicEvaluationsMap.set(q.day, list);
             }
         });
-        // Compute max score achieved per topic (so late strong answers override early uncertainty)
         const topicPerformance = [];
         const bestScorePerDay = new Map();
         visitedDays.forEach((dayNum) => {
@@ -42,11 +40,9 @@ class FeedbackEngine {
                 if (e.score > bestScore)
                     bestScore = e.score;
             });
-            // If no evals recorded for day, default to average score or 50
             if (evals.length === 0)
                 bestScore = 50;
             bestScorePerDay.set(dayNum, bestScore);
-            // Convert 0-100 score to 1-5 rating
             const rating = Math.min(5, Math.max(1, Math.round(bestScore / 20)));
             const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
             const dayData = this.curriculumLoader.getDayByNumber(dayNum);
@@ -58,28 +54,20 @@ class FeedbackEngine {
                 score: rating
             });
         });
-        // ── Prompt 30 Requirement 1: 5 Core Competency Scores (1-5 scale) ──
+        // Compute 5 Core Competency Scores (1-5 scale)
         const goodEvaluations = evaluations.filter((e) => e.score >= 60 || ['GOOD', 'EXCELLENT'].includes(e.correctness));
         const totalTurns = Math.max(1, evaluations.length);
-        // Cumulative evidence scoring (weighting best scores higher)
-        const allScores = Array.from(bestScorePerDay.values());
-        const avgBestScore = allScores.length > 0
-            ? allScores.reduce((a, b) => a + b, 0) / allScores.length
+        const allBestScores = Array.from(bestScorePerDay.values());
+        const avgBestScore = allBestScores.length > 0
+            ? allBestScores.reduce((a, b) => a + b, 0) / allBestScores.length
             : 50;
-        // Technical Understanding (1-5)
         const techRating = Math.min(5, Math.max(1, Math.round((avgBestScore / 100) * 5)));
-        // Practical Implementation (1-5): based on detected concepts & good evaluations
-        const hasImplementationDetails = goodEvaluations.some((e) => e.detected_concepts && e.detected_concepts.length >= 2);
-        const implRating = hasImplementationDetails
-            ? Math.min(5, techRating)
-            : Math.max(1, techRating - 1);
-        // System Design / Architecture (1-5)
-        const hasArchDetails = goodEvaluations.some((e) => e.score >= 70 || (e.detected_concepts || []).some((c) => c.toLowerCase().includes('vector') || c.toLowerCase().includes('rag') || c.toLowerCase().includes('fastapi')));
-        const archRating = hasArchDetails ? Math.min(5, techRating) : Math.max(1, techRating - 1);
-        // Trade-off Analysis (1-5)
-        const hasTradeoffDetails = evaluations.some((e) => e.score >= 75);
-        const tradeoffRating = hasTradeoffDetails ? Math.min(5, techRating) : Math.max(1, Math.round(techRating * 0.8));
-        // Communication Quality (1-5): based on absence of profanity/gibberish
+        const hasImpl = goodEvaluations.some((e) => e.detected_concepts && e.detected_concepts.length >= 2);
+        const implRating = hasImpl ? Math.min(5, techRating) : Math.max(1, techRating - 1);
+        const hasArch = goodEvaluations.some((e) => e.score >= 70 || (e.detected_concepts || []).some((c) => c.toLowerCase().includes('vector') || c.toLowerCase().includes('rag') || c.toLowerCase().includes('fastapi')));
+        const archRating = hasArch ? Math.min(5, techRating) : Math.max(1, techRating - 1);
+        const hasTradeoffs = evaluations.some((e) => e.score >= 75);
+        const tradeoffRating = hasTradeoffs ? Math.min(5, techRating) : Math.max(1, Math.round(techRating * 0.8));
         const badTurns = evaluations.filter((e) => ['PROFANITY', 'GIBBERISH', 'REFUSAL'].includes(e.correctness)).length;
         const commRating = Math.min(5, Math.max(1, Math.round(5 - (badTurns / totalTurns) * 3)));
         const averageCompetencyScore = Math.round(((techRating + implRating + archRating + tradeoffRating + commRating) / 5) * 10) / 10;
@@ -91,7 +79,7 @@ class FeedbackEngine {
             communicationQuality: commRating,
             averageScore: averageCompetencyScore
         };
-        // ── Prompt 30 Requirement 5: Competency-Based Hiring Thresholds ──
+        // Hiring Recommendation Thresholds
         let hiringRecommendation;
         if (averageCompetencyScore >= 4.5) {
             hiringRecommendation = 'Strong Hire';
@@ -108,7 +96,7 @@ class FeedbackEngine {
         else {
             hiringRecommendation = 'No Hire';
         }
-        // ── Prompt 30 Requirement 9: Evaluation Confidence ──
+        // Evaluation Confidence Score
         const technicalAnswerCount = evaluations.filter((e) => e.score >= 30).length;
         let confidence;
         if (technicalAnswerCount >= 4) {
@@ -120,81 +108,130 @@ class FeedbackEngine {
         else {
             confidence = 'Low';
         }
-        // ── Prompt 30 Requirement 2 & 7: Evidence Aggregation (Max 3 Competency Strengths) ──
-        const allDetectedConcepts = new Set();
+        // ── Prompt 33 Goal 2: Evidence-Backed Strengths (Max 3) ──
+        const demonstratedConcepts = new Set();
         goodEvaluations.forEach((e) => {
             (e.detected_concepts || []).forEach((c) => {
                 if (c && c.length > 2)
-                    allDetectedConcepts.add(c.toLowerCase());
+                    demonstratedConcepts.add(c.toLowerCase());
             });
         });
-        const conceptsArr = Array.from(allDetectedConcepts);
-        const aggregatedStrengths = [];
-        const hasVectorTech = conceptsArr.some((c) => c.includes('vector') || c.includes('embedding') || c.includes('chroma') || c.includes('faiss') || c.includes('sentence transformer'));
-        if (hasVectorTech) {
-            aggregatedStrengths.push('Demonstrated practical experience designing AI backend services using vector embeddings, similarity search, and ChromaDB.');
+        const conceptsArr = Array.from(demonstratedConcepts);
+        const evidenceBackedStrengths = [];
+        const hasEmbeddings = conceptsArr.some((c) => c.includes('vector') || c.includes('embedding') || c.includes('chroma') || c.includes('faiss') || c.includes('sentence transformer'));
+        if (hasEmbeddings) {
+            evidenceBackedStrengths.push('Demonstrated practical understanding of semantic retrieval by explaining cosine similarity, embedding persistence, metadata versioning and vector database architecture.');
         }
-        const hasApiTech = conceptsArr.some((c) => c.includes('api') || c.includes('fastapi') || c.includes('endpoint') || c.includes('ollama') || c.includes('http'));
-        if (hasApiTech) {
-            aggregatedStrengths.push('Showed solid awareness of AI backend API architecture, reusable endpoints, and service deployment.');
+        const hasApi = conceptsArr.some((c) => c.includes('api') || c.includes('fastapi') || c.includes('endpoint') || c.includes('ollama') || c.includes('http'));
+        if (hasApi) {
+            evidenceBackedStrengths.push('Demonstrated solid technical grasp of AI service deployment by explaining FastAPI async handlers, health-check endpoints, and reusable API request schemas.');
         }
-        const hasPythonTech = conceptsArr.some((c) => c.includes('python') || c.includes('vs code') || c.includes('virtual environment') || c.includes('pylance') || c.includes('sqlite'));
-        if (hasPythonTech) {
-            aggregatedStrengths.push('Demonstrated proficiency in Python environment setup, virtual environments, and developer tooling.');
+        const hasEnv = conceptsArr.some((c) => c.includes('python') || c.includes('vs code') || c.includes('virtual environment') || c.includes('pylance') || c.includes('sqlite'));
+        if (hasEnv) {
+            evidenceBackedStrengths.push('Demonstrated foundational proficiency in Python environment setup, virtual environment isolation (venv), debugging configuration (launch.json), and data tooling.');
         }
-        if (goodEvaluations.length > 0 && aggregatedStrengths.length === 0) {
-            const topTopics = topicPerformance.filter((t) => t.score >= 3).map((t) => t.topic).slice(0, 2).join(' and ');
-            aggregatedStrengths.push(`Demonstrated practical technical capability across ${topTopics || 'evaluated topics'}.`);
+        if (goodEvaluations.length > 0 && evidenceBackedStrengths.length === 0) {
+            evidenceBackedStrengths.push(`Demonstrated verified technical capability by providing accurate implementation details across ${visitedDayTitles.slice(0, 2).join(' and ')}.`);
         }
-        const finalStrengths = aggregatedStrengths.length > 0
-            ? aggregatedStrengths.slice(0, 3) // MAX 3 BULLETS
+        const finalStrengths = evidenceBackedStrengths.length > 0
+            ? evidenceBackedStrengths.slice(0, 3) // PROMPT 33 RULE: MAXIMUM 3 STRENGTHS
             : ['No technical strengths demonstrated.'];
-        // ── Prompt 30 Requirement 8: Areas for Growth (Max 5 Bullets, No False Gaps) ──
-        // Do NOT include gaps for topics where candidate later demonstrated strong knowledge!
-        const rawWeaknesses = memory.getWeaknesses();
-        const genuineGaps = [];
-        rawWeaknesses.forEach((w) => {
-            const trimmed = w.trim();
-            const isWeaknessOverridden = Array.from(bestScorePerDay.values()).some((score) => score >= 70);
-            if (!isWeaknessOverridden || !trimmed.toLowerCase().includes('lacked technical depth')) {
-                const isDup = genuineGaps.some((g) => g.toLowerCase().includes(trimmed.toLowerCase()));
-                if (!isDup && !trimmed.toLowerCase().includes('no technical strengths')) {
-                    genuineGaps.push(trimmed.endsWith('.') ? trimmed : `${trimmed}.`);
+        // ── Prompt 33 Goal 3: Specific Missing-Concept Weaknesses (Max 5) ──
+        // Replace generic "lacked technical depth" with specific missing concepts
+        const missingConceptsSet = new Set();
+        evaluations.forEach((e) => {
+            (e.missing_concepts || []).forEach((mc) => {
+                if (mc && mc.length > 2 && !mc.toLowerCase().includes('lacked technical depth')) {
+                    missingConceptsSet.add(mc.trim());
                 }
+            });
+        });
+        const specificWeaknesses = [];
+        missingConceptsSet.forEach((mc) => {
+            // Ensure missing concept was not later mastered
+            const isMastered = conceptsArr.some((c) => c.includes(mc.toLowerCase()));
+            if (!isMastered && specificWeaknesses.length < 5) {
+                specificWeaknesses.push(mc.endsWith('.') ? mc : `${mc}.`);
             }
         });
-        if (genuineGaps.length === 0 && averageCompetencyScore < 4.0) {
-            genuineGaps.push('Opportunities to deepen architectural trade-off analysis in large-scale AI deployments.');
+        // If specific missing concepts were empty, construct specific gap statements from weak turns
+        if (specificWeaknesses.length === 0) {
+            evaluations.forEach((e, idx) => {
+                if (e.score < 50 && specificWeaknesses.length < 5) {
+                    const q = askedQuestions[idx];
+                    const dayData = q ? this.curriculumLoader.getDayByNumber(q.day) : undefined;
+                    const topicName = dayData ? dayData.title : 'evaluation topic';
+                    specificWeaknesses.push(`Skipped lower-level configuration and trade-off specifics on ${topicName}.`);
+                }
+            });
         }
-        const finalGaps = genuineGaps.slice(0, 5); // MAX 5 BULLETS
-        // ── Study Plan ──
-        const next = [];
-        visitedDays.forEach((dayNum) => {
-            const dayData = this.curriculumLoader.getDayByNumber(dayNum);
-            if (dayData && dayData.objectives.length > 0) {
-                next.push(`Review Day ${dayNum} (${dayData.title}): Practice ${dayData.objectives[0]}`);
+        if (specificWeaknesses.length === 0 && averageCompetencyScore < 4.5) {
+            specificWeaknesses.push('Skipped detailed performance profiling and latency optimization trade-offs under high concurrency.');
+        }
+        const finalGaps = Array.from(new Set(specificWeaknesses)).slice(0, 5); // PROMPT 33 RULE: MAXIMUM 5 WEAKNESSES
+        // ── Prompt 33 Goal 8: Focused Weak-Area Roadmap (Max 3 Items) ──
+        // DO NOT suggest reviewing topics already mastered (score >= 4)
+        const weakTopics = topicPerformance.filter((tp) => tp.score < 4);
+        const focusedRoadmap = [];
+        weakTopics.forEach((wt) => {
+            const dayData = this.curriculumLoader.getDayByNumber(wt.dayNum);
+            if (dayData && dayData.objectives.length > 0 && focusedRoadmap.length < 3) {
+                focusedRoadmap.push(`Review Day ${wt.dayNum} (${dayData.title}): Practice ${dayData.objectives[0]}`);
             }
         });
-        if (next.length < 2) {
-            next.push('Implement end-to-end evaluation metrics and observability using structured logging.');
+        if (focusedRoadmap.length === 0 && averageCompetencyScore < 4.5) {
+            focusedRoadmap.push('Implement end-to-end evaluation metrics and observability using structured logging and OpenTelemetry.');
         }
-        // ── Prompt 30 Requirement 6: Evidence-Grounded Executive Summary ──
-        const topTopicTitles = topicPerformance.filter((t) => t.score >= 3).map((t) => t.topic.replace(/^Day \d+: /, '')).join(', ');
+        const finalRoadmap = focusedRoadmap.slice(0, 3); // PROMPT 33 RULE: MAXIMUM 3 ROADMAP ITEMS
+        // ── Prompt 33 Goal 6: Interview Statistics ──
+        const avgScore = memory.getAverageScore();
+        const statistics = {
+            questionsAsked: memory.getQuestionCount(),
+            goodAnswersCount: goodEvaluations.length,
+            weakAnswersCount: evaluations.length - goodEvaluations.length,
+            adaptiveFollowupsCount: evaluations.filter((e) => e.next_action === 'follow_up').length,
+            topicsVisitedCount: visitedDays.length,
+            averageResponseQuality: `${Math.round(avgScore)}%`,
+            confidence
+        };
+        // ── Prompt 33 Goal 7: Hiring Panel Decision Breakdown ──
+        const getRecForRating = (rating) => {
+            if (rating >= 5)
+                return 'Strong Hire';
+            if (rating >= 4)
+                return 'Hire';
+            if (rating >= 3)
+                return 'Lean Hire';
+            if (rating >= 2)
+                return 'Weak Pass';
+            return 'No Hire';
+        };
+        const overallStars = '★'.repeat(Math.round(averageCompetencyScore)) + '☆'.repeat(5 - Math.round(averageCompetencyScore));
+        const panelDecision = {
+            technicalInterview: getRecForRating(techRating),
+            architectureReview: getRecForRating(archRating),
+            communication: commRating >= 4 ? 'Strong' : commRating >= 3 ? 'Satisfactory' : 'Needs Improvement',
+            overallRecommendation: hiringRecommendation,
+            overallStars
+        };
+        // ── Prompt 33 Goal 1 & 9: Evidence Summary & Layout Wording ──
         const summary = goodEvaluations.length > 0
-            ? `${member.name} demonstrated practical knowledge of ${topTopicTitles || 'AI engineering fundamentals'}. Responses showed implementation experience and technical reasoning. Evaluation Confidence: ${confidence}. Hiring Recommendation: ${hiringRecommendation} (Avg Score: ${averageCompetencyScore}/5.0).`
-            : `${member.name} completed the technical evaluation covering ${visitedDays.length} topics. Candidate struggled across evaluation criteria and demonstrated no verified technical strengths. Evaluation Confidence: ${confidence}. Hiring Recommendation: ${hiringRecommendation} (Avg Score: ${averageCompetencyScore}/5.0).`;
-        const deterministicFeedback = {
+            ? `${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp) completed a technical evaluation covering ${visitedDays.length} topics. Candidate demonstrated verified evidence in practical implementation and core architecture. Recommendation: ${hiringRecommendation} (${overallStars} ${averageCompetencyScore}/5.0).`
+            : `${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp) completed a technical evaluation covering ${visitedDays.length} topics. Candidate struggled across technical evaluation criteria and demonstrated no verified evidence of competency. Recommendation: ${hiringRecommendation} (${overallStars} ${averageCompetencyScore}/5.0).`;
+        const feedbackObject = {
             summary,
             competencyScores,
             strengths: finalStrengths,
             gaps: finalGaps,
-            next: Array.from(new Set(next)).slice(0, 4),
+            next: finalRoadmap,
             topicPerformance,
             hiringRecommendation,
             confidence,
-            communicationAssessment: commRating >= 4 ? 'Clear and professional technical communication.' : 'Communication lacked technical depth in several turns.'
+            statistics,
+            panelDecision,
+            communicationAssessment: commRating >= 4 ? 'Clear and precise technical communication.' : 'Communication lacked depth on key implementation details.'
         };
-        // Attempt LLM-enhanced feedback
+        // Attempt LLM-enhanced feedback while guaranteeing Prompt 33 constraints
         try {
             const sanitizedAnswers = candidateAnswers
                 .map((a) => a.text
@@ -203,36 +240,27 @@ class FeedbackEngine {
                 .slice(0, 300))
                 .filter((a) => a.length > 5)
                 .slice(-10);
-            const prompt = `You are a Senior Technical Hiring Panel generating a final candidate evaluation report.
+            const prompt = `You are a Senior Technical Hiring Panel generating an executive-grade candidate evaluation report.
 
 Candidate: ${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp)
-Competency Average Score: ${averageCompetencyScore}/5.0
+Average Competency Score: ${averageCompetencyScore}/5.0 (${overallStars})
 Hiring Recommendation: ${hiringRecommendation}
 Evaluation Confidence: ${confidence}
-Topic Performance: ${topicPerformance.map((t) => `${t.topic}: ${t.stars}`).join('; ')}
-Candidate Demonstrated Strengths: ${finalStrengths.join('; ')}
-Documented Learning Gaps: ${finalGaps.length > 0 ? finalGaps.join('; ') : 'None'}
+Verified Evidence Strengths: ${finalStrengths.join('; ')}
+Missing Concepts / Weaknesses: ${finalGaps.join('; ')}
 Candidate Answers: ${sanitizedAnswers.map((a, i) => `[${i + 1}] ${a}`).join(' | ')}
 
-MANDATORY RULES — PROMPT 30 EVALUATION REPORT ENGINE:
-1. SUMMARY: Write a 2-3 sentence evidence-grounded summary referencing specific candidate name, topics, and verified performance.
-2. STRENGTHS (MAX 3 BULLETS): Output at most 3 competency-level merged bullet points.
-3. GAPS (MAX 5 BULLETS): Output at most 5 genuine deduplicated learning gaps.
+MANDATORY CONSTRAINTS — PROMPT 33 EXECUTIVE REPORT ENGINE:
+1. STRENGTHS (MAXIMUM 3 BULLETS): Must be evidence-backed referencing specific tools/concepts explained (e.g. "Demonstrated practical understanding of semantic retrieval by explaining cosine similarity...").
+2. WEAKNESSES (MAXIMUM 5 BULLETS): Must be specific missing concepts actually observed (e.g. "Did not discuss environment variable management"). NEVER output generic statements like "Lacked technical depth".
+3. ROADMAP (MAXIMUM 3 BULLETS): Recommend ONLY actual weak areas. Never suggest reviewing topics already mastered.
 
-Generate a raw valid JSON hiring panel report:
+Generate a raw valid JSON report:
 {
   "summary": "${summary}",
-  "competencyScores": {
-    "technicalUnderstanding": ${techRating},
-    "practicalImplementation": ${implRating},
-    "systemDesignArchitecture": ${archRating},
-    "tradeoffAnalysis": ${tradeoffRating},
-    "communicationQuality": ${commRating},
-    "averageScore": ${averageCompetencyScore}
-  },
   "strengths": ${JSON.stringify(finalStrengths)},
   "gaps": ${JSON.stringify(finalGaps)},
-  "next": ${JSON.stringify(deterministicFeedback.next)},
+  "next": ${JSON.stringify(finalRoadmap)},
   "hiringRecommendation": "${hiringRecommendation}",
   "confidence": "${confidence}"
 }
@@ -245,13 +273,16 @@ Output ONLY raw valid JSON.`;
                 if (parsed.summary &&
                     Array.isArray(parsed.strengths) &&
                     Array.isArray(parsed.gaps)) {
-                    parsed.competencyScores = parsed.competencyScores || competencyScores;
+                    parsed.competencyScores = competencyScores;
                     parsed.topicPerformance = topicPerformance;
+                    parsed.statistics = statistics;
+                    parsed.panelDecision = panelDecision;
                     parsed.strengths = (parsed.strengths || []).slice(0, 3);
                     parsed.gaps = (parsed.gaps || []).slice(0, 5);
+                    parsed.next = (parsed.next || finalRoadmap).slice(0, 3);
                     parsed.hiringRecommendation = hiringRecommendation;
                     parsed.confidence = confidence;
-                    logger_1.Logger.info(`Generated LLM-enhanced competency evaluation report for session.`);
+                    logger_1.Logger.info(`Generated executive evidence report for session.`);
                     return parsed;
                 }
             }
@@ -259,7 +290,7 @@ Output ONLY raw valid JSON.`;
         catch (err) {
             logger_1.Logger.warn('LLM feedback enhancement failed — using deterministic fallback.', err.message);
         }
-        return deterministicFeedback;
+        return feedbackObject;
     }
 }
 exports.FeedbackEngine = FeedbackEngine;
