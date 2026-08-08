@@ -11,6 +11,11 @@ class ConversationMemory {
     questionCountNum = 0;
     currentDifficultyScalar = 2.5; // Default mid difficulty
     topicHistoryList = [];
+    // Enhanced Evaluation & Retry State
+    evaluationsList = [];
+    scoresList = [];
+    confidenceList = [];
+    retryMap = new Map();
     markDayVisited(day) {
         this.visitedDaysSet.add(day);
         if (!this.topicHistoryList.includes(day)) {
@@ -33,6 +38,52 @@ class ConversationMemory {
             text,
             timestamp: new Date()
         });
+    }
+    recordEvaluation(evalResult, currentDay) {
+        this.evaluationsList.push(evalResult);
+        this.scoresList.push(evalResult.score);
+        this.confidenceList.push(evalResult.confidence);
+        if (evalResult.strengths) {
+            evalResult.strengths.forEach((s) => this.strengthsList.add(s));
+        }
+        if (evalResult.weaknesses) {
+            evalResult.weaknesses.forEach((w) => this.weaknessesList.add(w));
+        }
+        if (evalResult.next_action === 'retry') {
+            this.incrementRetryCount(currentDay);
+        }
+        else if (evalResult.next_action === 'advance') {
+            this.resetRetryCount(currentDay);
+        }
+    }
+    getRetryCountForDay(day) {
+        return this.retryMap.get(day) || 0;
+    }
+    incrementRetryCount(day) {
+        const current = this.getRetryCountForDay(day);
+        const updated = current + 1;
+        this.retryMap.set(day, updated);
+        return updated;
+    }
+    resetRetryCount(day) {
+        this.retryMap.set(day, 0);
+    }
+    getLastEvaluation() {
+        return this.evaluationsList.length > 0
+            ? this.evaluationsList[this.evaluationsList.length - 1]
+            : null;
+    }
+    getAverageScore() {
+        if (this.scoresList.length === 0)
+            return 0;
+        const sum = this.scoresList.reduce((acc, curr) => acc + curr, 0);
+        return Math.round(sum / this.scoresList.length);
+    }
+    getAverageConfidence() {
+        if (this.confidenceList.length === 0)
+            return 0;
+        const sum = this.confidenceList.reduce((acc, curr) => acc + curr, 0);
+        return Math.round(sum / this.confidenceList.length);
     }
     recordMistake(day, concept, detail) {
         this.mistakesList.push({

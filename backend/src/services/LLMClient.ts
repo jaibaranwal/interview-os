@@ -29,7 +29,7 @@ export class LLMClient implements ILLMClient {
   }
 
   public async generate(systemPrompt: string, userMessage: string = ''): Promise<string> {
-    // 1. Try Live LLM Execution if client configured
+    // 1. Live LLM Execution
     if (this.client) {
       try {
         const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -56,32 +56,38 @@ export class LLMClient implements ILLMClient {
       }
     }
 
-    // 2. Intelligent Deterministic Fallback Generation (for offline dev/tests)
+    // 2. Intelligent Deterministic Fallback Generation
     return this.generateFallbackResponse(systemPrompt, userMessage);
   }
 
   private generateFallbackResponse(systemPrompt: string, userMessage: string): string {
     const lowerPrompt = systemPrompt.toLowerCase();
 
+    // Spam / Retry Fallback
+    if (lowerPrompt.includes('retry action') || lowerPrompt.includes('invalid') || lowerPrompt.includes('asdf')) {
+      return "I couldn't determine your understanding from that response. Could you explain how Sentence Transformers generate embeddings for text chunks?";
+    }
+
     // Greeting Fallback
-    if (lowerPrompt.includes('state: greeting') || lowerPrompt.includes('welcome')) {
+    if (lowerPrompt.includes('state: greeting') || lowerPrompt.includes('greeting action')) {
       const nameMatch = systemPrompt.match(/Candidate Name:\s*([^\n]+)/i);
       const candidateName = nameMatch ? nameMatch[1].trim() : 'Candidate';
       return `Welcome ${candidateName}. I'm excited to explore your 31-day AI Cohort learning journey. Let's begin by discussing your experience with foundational AI setup and core concepts.`;
+    }
+
+    // Follow-up Fallback
+    if (lowerPrompt.includes('follow-up action')) {
+      return "Building on what you mentioned, how did you evaluate vector magnitude versus cosine distance during your implementation?";
     }
 
     // Question Fallback
     if (lowerPrompt.includes('target curriculum day:')) {
       const dayMatch = systemPrompt.match(/Target Curriculum Day:\s*Day (\d+) - ([^\n]+)/i);
       const toolMatch = systemPrompt.match(/Relevant Tools:\s*([^\n]+)/i);
-      
+
       const dayNum = dayMatch ? dayMatch[1] : '7';
       const dayTitle = dayMatch ? dayMatch[2] : 'Embeddings Explained';
       const tools = toolMatch ? toolMatch[1] : 'Sentence Transformers';
-
-      if (userMessage && userMessage.length > 0) {
-        return `Building on what you mentioned, how did you implement ${tools} during Day ${dayNum} (${dayTitle})? Specifically, what trade-offs did you evaluate?`;
-      }
 
       return `Let's discuss Day ${dayNum}: ${dayTitle}. How did you configure and use ${tools} in your implementation, and what key objective did you achieve?`;
     }

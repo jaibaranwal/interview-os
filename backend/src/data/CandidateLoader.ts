@@ -1,13 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import { CandidateProfile, CandidatesData } from '../types';
+import { CandidateProfile } from '../types';
+
+export interface CandidatesData {
+  candidates: CandidateProfile[];
+}
 
 export class CandidateLoader {
   private static instance: CandidateLoader;
-  private data: CandidatesData;
+  private candidates: CandidateProfile[] = [];
 
   private constructor() {
-    // Locate candidates.json in repository root or relative path
     const possiblePaths = [
       path.resolve(__dirname, '../../../candidates.json'),
       path.resolve(process.cwd(), 'candidates.json'),
@@ -27,9 +30,13 @@ export class CandidateLoader {
     }
 
     const rawData = fs.readFileSync(filePath, 'utf-8');
-    this.data = JSON.parse(rawData) as CandidatesData;
+    const parsedData = JSON.parse(rawData);
 
-    if (!this.data || !Array.isArray(this.data.candidates)) {
+    if (Array.isArray(parsedData)) {
+      this.candidates = parsedData as CandidateProfile[];
+    } else if (parsedData && Array.isArray(parsedData.candidates)) {
+      this.candidates = parsedData.candidates as CandidateProfile[];
+    } else {
       throw new Error(`CandidateLoader: Invalid format in candidates.json`);
     }
   }
@@ -42,16 +49,16 @@ export class CandidateLoader {
   }
 
   public getAllCandidates(): CandidateProfile[] {
-    return this.data.candidates;
+    return this.candidates;
   }
 
   public getCandidateById(id: string): CandidateProfile | undefined {
-    return this.data.candidates.find((c) => c.member.id === id);
+    return this.candidates.find((c: CandidateProfile) => c.member.id === id);
   }
 
   public getCandidateByName(name: string): CandidateProfile | undefined {
-    return this.data.candidates.find(
-      (c) => c.member.name.toLowerCase() === name.toLowerCase()
+    return this.candidates.find((c: CandidateProfile) =>
+      c.member.name.toLowerCase().includes(name.toLowerCase())
     );
   }
 }

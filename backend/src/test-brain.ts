@@ -9,7 +9,7 @@ console.log('==================================================');
 console.log('   INTERVIEWOS DETERMINISTIC BRAIN VERIFICATION TEST');
 console.log('==================================================\n');
 
-try {
+async function testBrain() {
   const candidateLoader = CandidateLoader.getInstance();
 
   // 1. Test CandidateAnalyzer
@@ -85,21 +85,21 @@ try {
   }
   console.log('   ✅ StateMachine Passed.\n');
 
-  // 5. Test ResponseEvaluator
+  // 5. Test ResponseEvaluator Engine
   console.log('5️⃣ Testing ResponseEvaluator ...');
   const evaluator = new ResponseEvaluator();
 
-  const emptyEval = evaluator.evaluateResponse('');
-  const shortUncertainEval = evaluator.evaluateResponse("i think maybe don't know");
-  const detailedExemplaryEval = evaluator.evaluateResponse(
+  const emptyEval = await evaluator.evaluateResponse('asdfasdf');
+  const shortUncertainEval = await evaluator.evaluateResponse("i think maybe don't know");
+  const detailedExemplaryEval = await evaluator.evaluateResponse(
     'Specifically, I built the RAG retrieval pipeline on Day 11 using Sentence Transformers and configured ChromaDB with cosine similarity metadata filtering to ensure high accuracy.'
   );
 
-  console.log(`   Empty Response Quality: ${emptyEval.quality} (Score: ${emptyEval.confidenceScore})`);
-  console.log(`   Uncertain Response Quality: ${shortUncertainEval.quality} (Score: ${shortUncertainEval.confidenceScore}, Uncertain Keywords: ${shortUncertainEval.detectedUncertaintyKeywords.join(', ')})`);
-  console.log(`   Detailed Response Quality: ${detailedExemplaryEval.quality} (Score: ${detailedExemplaryEval.confidenceScore}, Confidence Keywords: ${detailedExemplaryEval.detectedConfidenceKeywords.join(', ')})`);
+  console.log(`   Spam Response Action: ${emptyEval.next_action} (Score: ${emptyEval.score})`);
+  console.log(`   Uncertain Response Action: ${shortUncertainEval.next_action} (Score: ${shortUncertainEval.score})`);
+  console.log(`   Detailed Response Action: ${detailedExemplaryEval.next_action} (Score: ${detailedExemplaryEval.score})`);
 
-  if (emptyEval.quality !== 'EMPTY' || detailedExemplaryEval.quality !== 'EXEMPLARY') {
+  if (emptyEval.next_action !== 'retry' || detailedExemplaryEval.next_action !== 'advance') {
     throw new Error('ResponseEvaluator classification failed!');
   }
   console.log('   ✅ ResponseEvaluator Passed.\n');
@@ -107,7 +107,9 @@ try {
   console.log('==================================================');
   console.log('🎉 DETERMINISTIC INTERVIEW BRAIN VERIFICATION SUCCESSFUL');
   console.log('==================================================\n');
-} catch (err: any) {
+}
+
+testBrain().catch((err) => {
   console.error('❌ INTERVIEW BRAIN TEST FAILED:', err.message);
   process.exit(1);
-}
+});

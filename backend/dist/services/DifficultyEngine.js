@@ -16,26 +16,27 @@ class DifficultyEngine {
     }
     updateDifficulty(currentDifficulty, evaluation) {
         let delta = 0.0;
-        switch (evaluation.quality) {
-            case 'EXEMPLARY':
-                delta = 0.4;
-                break;
-            case 'ADEQUATE':
-                delta = 0.1;
-                break;
-            case 'POOR':
-                delta = -0.3;
-                break;
-            case 'EMPTY':
-                delta = -0.4;
-                break;
+        if (evaluation.score >= 80) {
+            delta = 0.35;
         }
-        // Additional adjustment based on confidence score
-        if (evaluation.confidenceScore >= 0.8) {
-            delta += 0.1;
+        else if (evaluation.score >= 70) {
+            delta = 0.15;
         }
-        else if (evaluation.isUncertain) {
-            delta -= 0.1;
+        else if (evaluation.score >= 50) {
+            delta = 0.0; // Maintain current level
+        }
+        else if (evaluation.score >= 25) {
+            delta = -0.25;
+        }
+        else {
+            delta = -0.4;
+        }
+        // Recommended difficulty scalar override check
+        if (evaluation.recommended_difficulty === 'EASY' && currentDifficulty > 2.5) {
+            delta -= 0.2;
+        }
+        else if (evaluation.recommended_difficulty === 'EXPERT' && currentDifficulty < 4.0) {
+            delta += 0.2;
         }
         const updated = currentDifficulty + delta;
         return Number(Math.min(5.0, Math.max(1.0, updated)).toFixed(2));

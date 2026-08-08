@@ -1,4 +1,3 @@
-// Candidate Data Types
 export interface CandidateMember {
   id: string;
   name: string;
@@ -28,11 +27,6 @@ export interface CandidateProfile {
   signals: CandidateSignals;
 }
 
-export interface CandidatesData {
-  candidates: CandidateProfile[];
-}
-
-// Curriculum Data Types
 export interface CurriculumModule {
   n: number;
   title: string;
@@ -53,7 +47,6 @@ export interface CurriculumData {
   days: CurriculumDay[];
 }
 
-// API Contract Types
 export interface StartInterviewRequest {
   sessionId: string;
   candidate: CandidateProfile;
@@ -73,15 +66,22 @@ export interface FeedbackObject {
   next: string[];
 }
 
-export interface ContinuationResponse {
+export interface InterviewResponse {
   reply: string;
-  done: false;
+  done: boolean;
+  feedback?: FeedbackObject;
 }
 
-export interface FinalResponse {
-  reply: string;
-  done: true;
-  feedback: FeedbackObject;
+export interface LLMEvaluationResult {
+  score: number; // 0-100
+  confidence: number; // 0-100
+  correctness: 'EXEMPLARY' | 'ADEQUATE' | 'WEAK' | 'INVALID';
+  detected_concepts: string[];
+  missing_concepts: string[];
+  strengths: string[];
+  weaknesses: string[];
+  follow_up_needed: boolean;
+  recommended_difficulty: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+  next_action: 'retry' | 'follow_up' | 'advance';
+  raw_reasoning?: string;
 }
-
-export type InterviewResponse = ContinuationResponse | FinalResponse;

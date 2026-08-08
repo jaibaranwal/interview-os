@@ -1,3 +1,5 @@
+import { LLMEvaluationResult } from '../types';
+
 export interface AskedQuestionRecord {
   day: number;
   objective: string;
@@ -29,6 +31,12 @@ export class ConversationMemory {
   private currentDifficultyScalar: number = 2.5; // Default mid difficulty
   private topicHistoryList: number[] = [];
 
+  // Enhanced Evaluation & Retry State
+  private evaluationsList: LLMEvaluationResult[] = [];
+  private scoresList: number[] = [];
+  private confidenceList: number[] = [];
+  private retryMap: Map<number, number> = new Map<number, number>();
+
   public markDayVisited(day: number): void {
     this.visitedDaysSet.add(day);
     if (!this.topicHistoryList.includes(day)) {
@@ -53,6 +61,58 @@ export class ConversationMemory {
       text,
       timestamp: new Date()
     });
+  }
+
+  public recordEvaluation(evalResult: LLMEvaluationResult, currentDay: number): void {
+    this.evaluationsList.push(evalResult);
+    this.scoresList.push(evalResult.score);
+    this.confidenceList.push(evalResult.confidence);
+
+    if (evalResult.strengths) {
+      evalResult.strengths.forEach((s) => this.strengthsList.add(s));
+    }
+    if (evalResult.weaknesses) {
+      evalResult.weaknesses.forEach((w) => this.weaknessesList.add(w));
+    }
+
+    if (evalResult.next_action === 'retry') {
+      this.incrementRetryCount(currentDay);
+    } else if (evalResult.next_action === 'advance') {
+      this.resetRetryCount(currentDay);
+    }
+  }
+
+  public getRetryCountForDay(day: number): number {
+    return this.retryMap.get(day) || 0;
+  }
+
+  public incrementRetryCount(day: number): number {
+    const current = this.getRetryCountForDay(day);
+    const updated = current + 1;
+    this.retryMap.set(day, updated);
+    return updated;
+  }
+
+  public resetRetryCount(day: number): void {
+    this.retryMap.set(day, 0);
+  }
+
+  public getLastEvaluation(): LLMEvaluationResult | null {
+    return this.evaluationsList.length > 0
+      ? this.evaluationsList[this.evaluationsList.length - 1]
+      : null;
+  }
+
+  public getAverageScore(): number {
+    if (this.scoresList.length === 0) return 0;
+    const sum = this.scoresList.reduce((acc, curr) => acc + curr, 0);
+    return Math.round(sum / this.scoresList.length);
+  }
+
+  public getAverageConfidence(): number {
+    if (this.confidenceList.length === 0) return 0;
+    const sum = this.confidenceList.reduce((acc, curr) => acc + curr, 0);
+    return Math.round(sum / this.confidenceList.length);
   }
 
   public recordMistake(day: number, concept: string, detail: string): void {

@@ -8,9 +8,8 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 class CandidateLoader {
     static instance;
-    data;
+    candidates = [];
     constructor() {
-        // Locate candidates.json in repository root or relative path
         const possiblePaths = [
             path_1.default.resolve(__dirname, '../../../candidates.json'),
             path_1.default.resolve(process.cwd(), 'candidates.json'),
@@ -27,8 +26,14 @@ class CandidateLoader {
             throw new Error(`CandidateLoader: Could not locate candidates.json file.`);
         }
         const rawData = fs_1.default.readFileSync(filePath, 'utf-8');
-        this.data = JSON.parse(rawData);
-        if (!this.data || !Array.isArray(this.data.candidates)) {
+        const parsedData = JSON.parse(rawData);
+        if (Array.isArray(parsedData)) {
+            this.candidates = parsedData;
+        }
+        else if (parsedData && Array.isArray(parsedData.candidates)) {
+            this.candidates = parsedData.candidates;
+        }
+        else {
             throw new Error(`CandidateLoader: Invalid format in candidates.json`);
         }
     }
@@ -39,13 +44,13 @@ class CandidateLoader {
         return CandidateLoader.instance;
     }
     getAllCandidates() {
-        return this.data.candidates;
+        return this.candidates;
     }
     getCandidateById(id) {
-        return this.data.candidates.find((c) => c.member.id === id);
+        return this.candidates.find((c) => c.member.id === id);
     }
     getCandidateByName(name) {
-        return this.data.candidates.find((c) => c.member.name.toLowerCase() === name.toLowerCase());
+        return this.candidates.find((c) => c.member.name.toLowerCase().includes(name.toLowerCase()));
     }
 }
 exports.CandidateLoader = CandidateLoader;

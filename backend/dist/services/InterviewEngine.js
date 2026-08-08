@@ -35,6 +35,7 @@ class InterviewEngine {
         this.curriculumLoader = curriculumLoader;
     }
     async processTurn(request) {
+        const startTime = Date.now();
         const { sessionId } = request;
         const isStartRequest = 'candidate' in request && !!request.candidate;
         const incomingMessage = 'message' in request ? request.message : undefined;
@@ -79,36 +80,45 @@ class InterviewEngine {
         }
         const analysis = session.metadata.analysis;
         const plan = session.metadata.plan;
-        // 5. Read current state & Evaluate candidate message (for turn 2+)
-        let responseEvaluation;
+        // Active Target Curriculum Day before turn evaluation
+        let currentTargetDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
+        const previousQuestions = memory.getAskedQuestions();
+        const lastQuestionText = previousQuestions.length > 0 ? previousQuestions[previousQuestions.length - 1].text : undefined;
+        // 5. Evaluate Candidate Response & State Decision
+        let evaluation;
         let currentState = stateMachine.getState();
+        let currentDayNum = currentTargetDay ? currentTargetDay.day : 7;
+        let currentRetryCount = memory.getRetryCountForDay(currentDayNum);
         if (incomingMessage && incomingMessage.trim().length > 0) {
-            responseEvaluation = this.responseEvaluator.evaluateResponse(incomingMessage);
             memory.recordAnswer(incomingMessage);
-            // Update difficulty
-            const updatedDifficulty = this.difficultyEngine.updateDifficulty(memory.getDifficulty(), responseEvaluation);
+            // Run LLM Evaluation Engine
+            evaluation = await this.responseEvaluator.evaluateResponse(incomingMessage, currentTargetDay, lastQuestionText);
+            // Record Evaluation in Memory
+            memory.recordEvaluation(evaluation, currentDayNum);
+            // Update Difficulty
+            const updatedDifficulty = this.difficultyEngine.updateDifficulty(memory.getDifficulty(), evaluation);
             memory.setDifficulty(updatedDifficulty);
-            // Track strengths / weaknesses
-            if (responseEvaluation.quality === 'EXEMPLARY') {
-                memory.recordStrength(`Demonstrated mastery in recent technical responses.`);
-            }
-            else if (responseEvaluation.isUncertain) {
-                memory.recordWeakness(`Exhibited uncertainty during concept probing.`);
-            }
-            // Advance state from LISTENING to EVALUATING
+            // State Transitions based on LLM Evaluation & Retry Count
             if (currentState === StateMachine_1.InterviewState.LISTENING) {
                 stateMachine.transitionTo(StateMachine_1.InterviewState.EVALUATING);
                 currentState = stateMachine.getState();
             }
-            // Check state transitions based on response quality
+            currentRetryCount = memory.getRetryCountForDay(currentDayNum);
             if (currentState === StateMachine_1.InterviewState.EVALUATING) {
-                if (responseEvaluation.isUncertain || responseEvaluation.quality === 'POOR') {
-                    stateMachine.transitionTo(StateMachine_1.InterviewState.HINT);
+                if (evaluation.next_action === 'retry') {
+                    if (currentRetryCount < 3) {
+                        stateMachine.transitionTo(StateMachine_1.InterviewState.HINT);
+                    }
+                    else {
+                        // Max retries reached: force topic switch
+                        stateMachine.transitionTo(StateMachine_1.InterviewState.TOPIC_SWITCH);
+                    }
                 }
-                else if (responseEvaluation.quality === 'ADEQUATE' && responseEvaluation.isShort) {
+                else if (evaluation.next_action === 'follow_up') {
                     stateMachine.transitionTo(StateMachine_1.InterviewState.FOLLOW_UP);
                 }
                 else {
+                    // Advance (score >= 70 or satisfactory answer)
                     stateMachine.transitionTo(StateMachine_1.InterviewState.TOPIC_SWITCH);
                 }
                 currentState = stateMachine.getState();
@@ -117,7 +127,6 @@ class InterviewEngine {
         // Check if Interview Completion Criteria Met (>= 8 questions AND >= 4 distinct days)
         const isCoverageMet = this.interviewPlanner.hasSufficientCoverage(memory.getVisitedDays(), memory.getQuestionCount());
         if (isCoverageMet) {
-            // Transition through FINAL_EVALUATION to COMPLETED
             if (stateMachine.canTransitionTo(StateMachine_1.InterviewState.FINAL_EVALUATION)) {
                 stateMachine.transitionTo(StateMachine_1.InterviewState.FINAL_EVALUATION);
             }
@@ -142,8 +151,13 @@ class InterviewEngine {
                 feedback
             };
         }
-        // Determine target day for turn
-        const currentTargetDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
+        // Determine target day for turn (Retain current day if retry, else select next)
+        if (evaluation?.next_action === 'retry' && currentRetryCount < 3) {
+            // Retain current target day! Do NOT advance curriculum day!
+        }
+        else {
+            currentTargetDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
+        }
         // 6. Call PromptBuilder
         const systemPrompt = this.promptBuilder.buildSystemPrompt({
             candidate: session.candidate,
@@ -156,11 +170,12 @@ class InterviewEngine {
             difficulty: memory.getDifficulty(),
             askedQuestions: memory.getAskedQuestions().map((q) => q.text),
             previousAnswer: incomingMessage,
-            responseEvaluation
+            evaluation,
+            retryCount: currentRetryCount
         });
-        // 7 & 8. Call LLM
+        // 7 & 8. Call LLM to Generate Next Question
         const llmReply = await this.llmClient.generate(systemPrompt, incomingMessage || '');
-        // 10. Update ConversationMemory & Record Question
+        // 10. Record Question in Memory
         if (currentTargetDay && currentState !== StateMachine_1.InterviewState.GREETING) {
             memory.recordQuestion(currentTargetDay.day, currentTargetDay.objectives[0] || currentTargetDay.title, llmReply);
         }
@@ -200,7 +215,29 @@ class InterviewEngine {
             messages: updatedMessages,
             metadata: session.metadata
         });
-        // 13. Return API Response
+        const latency = Date.now() - startTime;
+        // Structured Backend Terminal Logging
+        console.log('\n==================== INTERVIEW TURN ====================');
+        console.log(`Session ID: ${sessionId}`);
+        console.log(`Candidate: ${session.candidate.member.name} (${session.candidate.member.jobRole})`);
+        console.log(`Current State: ${stateMachine.getState()} | Difficulty: ${memory.getDifficulty().toFixed(1)}/5.0`);
+        console.log(`Target Day: Day ${currentTargetDay?.day || 7} (${currentTargetDay?.title})`);
+        if (incomingMessage) {
+            console.log(`Incoming Response: "${incomingMessage}"`);
+        }
+        if (evaluation) {
+            console.log('\n--- LLM EVALUATION ---');
+            console.log(`Score: ${evaluation.score} / 100 | Confidence: ${evaluation.confidence} / 100`);
+            console.log(`Correctness: ${evaluation.correctness}`);
+            console.log(`Detected Concepts: ${evaluation.detected_concepts.join(', ') || 'None'}`);
+            console.log(`Missing Concepts: ${evaluation.missing_concepts.join(', ') || 'None'}`);
+            console.log(`Next Action Decision: ${evaluation.next_action} (Retry Count: ${currentRetryCount}/3)`);
+        }
+        console.log('\n--- GENERATED QUESTION ---');
+        console.log(`"${llmReply}"`);
+        console.log(`\nLatency: ${latency}ms | Questions Asked: ${memory.getQuestionCount()}/8 | Visited Days: ${memory.getVisitedDays().length}/4`);
+        console.log('========================================================\n');
+        // 13. Return Response
         return {
             reply: llmReply,
             done: false
