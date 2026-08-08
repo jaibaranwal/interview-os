@@ -1,30 +1,85 @@
-# InterviewOS — Autonomous Adaptive AI Technical Interviewer
+# InterviewOS — Autonomous Adaptive AI Technical Interview Platform
 
-> **"Build the interviewer, not the interview."** — Problem Statement 2
+> **"Build the interviewer, not the interview."** — Hackathon Edition
 
-InterviewOS is an autonomous, adaptive AI Technical Interviewer built for evaluating candidates participating in the **31-Day AI Cohort**. Unlike static question-bank bots, InterviewOS acts as a senior principal interviewer: it analyzes candidate histories, constructs dynamic curriculum coverage plans, dynamically adjusts question difficulty, tracks conversational state, probes candidate claims, and compiles structured post-interview evaluations.
+InterviewOS is an autonomous, adaptive AI Technical Interviewer engineered for evaluating candidate capabilities across a **31-Day AI Engineering Cohort**. Built to emulate senior principal interviewers at Companies like Google, Meta, and OpenAI, InterviewOS combines deterministic finite state machines, multi-turn conversation memory, runtime assertion guards, 1–5 competency scoring, and executive hiring panel evaluation reports.
+
+---
+
+## 🚀 Problem & Solution
+
+### The Problem
+Traditional technical interviews suffer from high human interviewer variance, superficial keyword-matching automated bots, rigid static question banks, and uninformative pass/fail reports that fail to measure actual engineering competency.
+
+### The Solution: InterviewOS
+- **Adaptive State Machine Brain**: Dynamically transitions across 10 interview states (`GREETING`, `LISTENING`, `EVALUATING`, `FOLLOW_UP`, `TOPIC_SWITCH`, `FINAL_EVALUATION`, `COMPLETED`).
+- **Progressive Probing**: When a candidate answers correctly, the engine probes implementation details (`basic` → `implementation` → `trade-offs`) for 1 turn before moving to the next topic.
+- **Evidence-Based Competency Scoring**: Evaluates candidates on a 1–5 scale across 5 core dimensions:
+  1. *Technical Understanding*
+  2. *Practical Implementation*
+  3. *System Design / Architecture*
+  4. *Trade-off Analysis*
+  5. *Communication Quality*
+- **Executive Hiring Panel Reports**: Generates evidence-backed hiring reports with 5-star topic ratings, session statistics, and hiring panel decisions.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    A[Candidate Profile] --> B[React Frontend Cockpit]
+    B --> C[Interview Engine]
+    C --> D[Interview State Machine]
+    C --> E[Conversation Memory]
+    C --> F[Question Generator]
+    F --> G[Runtime Assertion Guards]
+    G --> H[Groq LLM llama-3.1-8b]
+    H --> I[Response Evaluator]
+    I --> J[Competency Engine]
+    J --> K[Executive Hiring Report]
+```
+
+### Architecture Pipeline Breakdown
+1. **Candidate Profile**: Evaluates candidate seniority ($S \in [1.0, 5.0]$) and classifies completed/skipped missions.
+2. **React Frontend Cockpit**: Built with React, Vite, TypeScript, Tailwind/Glassmorphism CSS, and Framer Motion.
+3. **Interview Engine**: Core orchestrator coordinating turn execution without hardcoded prompt leakage.
+4. **Conversation Memory**: Stateful memory tracking visited days, asked objectives, turn histories, detected mistakes, strengths, and weaknesses.
+5. **Question Generator & Assertion Guards**: Enforces 4 runtime assertions (topic grounding, no topic leakage, prompt diversity across last 3 turns, follow-up phrase guard).
+6. **Groq LLM Inference**: High-speed inference using `llama-3.1-8b-instant` with automatic retry logic.
+7. **Response Evaluator**: Dual-engine evaluator (Fast-path regex + LLM) classifying responses into 9 buckets (`EXCELLENT`, `GOOD`, `WEAK`, `UNCERTAIN`, `GIBBERISH`, `OFF_TOPIC`, `PROFANITY`, `REFUSAL`, `LACK_OF_EXPERIENCE`).
+8. **Competency Engine & Hiring Report**: Calculates 1–5 scale competency scores, topic-level 5-star ratings, and evidence-backed hiring panel decisions.
 
 ---
 
 ## 🌟 Key Differentiators & Features
 
-1. **Deterministic Interview Brain:**
-   - **CandidateAnalyzer:** Scores seniority ($S \in [1.0, 5.0]$) and classifies historical missions into mastered, struggled, and skipped topics.
-   - **InterviewPlanner:** Guarantees minimum 8 questions across at least 4 curriculum days, prioritizing candidate weak areas while avoiding skipped curriculum overflow.
-   - **ConversationMemory:** Stateful memory tracking visited days, asked objectives, turn histories, detected mistakes, strengths, and weaknesses.
-   - **StateMachine:** 10-state finite state machine (`GREETING`, `PLANNING`, `QUESTION`, `LISTENING`, `EVALUATING`, `FOLLOW_UP`, `HINT`, `TOPIC_SWITCH`, `FINAL_EVALUATION`, `COMPLETED`).
-   - **ResponseEvaluator:** Deterministic natural language evaluator detecting empty, short, detailed, or uncertain responses.
+1. **Deterministic Interview Brain**:
+   - **CandidateAnalyzer**: Scores candidate seniority and mission progress.
+   - **InterviewPlanner**: Guarantees coverage across at least 4 curriculum days and minimum 8 questions.
+   - **ResponseEvaluator**: Classifies responses deterministically.
 
-2. **Orchestration Layer & Provider Independence:**
-   - **InterviewEngine:** Clean, decoupled orchestrator executing turn transitions without hardcoded prompts.
-   - **LLMClient:** Supports OpenAI and Gemini (via OpenAI-compatible endpoint). Includes an intelligent offline fallback mode for local testing.
-   - **PromptBuilder:** Synthesizes system prompts enforcing strict constraints: **Ask EXACTLY ONE question**, zero internal reasoning leakage, and concise interviewer tone.
+2. **Executive Hiring Panel Dashboard**:
+   - Overall Star Rating (`★★★★★`)
+   - Hiring Panel Decision Breakdown (Technical, Architecture, Communication, Overall)
+   - 1–5 Competency Scorecard
+   - Session Interview Statistics
+   - Evidence-Backed Strengths (max 3) & Specific Missing Concepts (max 5)
+   - Focused Growth Roadmap (max 3 weak-area items)
 
-3. **Modern Web UI Cockpit:**
-   - Dark glassmorphism dashboard built with React, Vite, and TypeScript.
-   - Candidate drawer allowing judges to select any of the 20 cohort profiles.
-   - Live metrics bar tracking Question Progress ($0/8$), Curriculum Days ($0/4$), and Adaptive Difficulty ($D$).
-   - Interactive modal rendering structured post-interview feedback (`summary`, `strengths`, `gaps`, `next`).
+3. **High-Tech SaaS UI (OpenAI × Linear × Apple Quality)**:
+   - Dark obsidian background (`#050816`) with low-opacity animated gradient mesh.
+   - 60fps Framer Motion microinteractions and transitions.
+   - Interactive Candidate Profile Selector Drawer.
+   - Real-time cockpit tracking difficulty meters, question progress, and FSM state indicators.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19, Vite, TypeScript, Framer Motion, Lucide React, Glassmorphism CSS
+- **Backend**: Node.js, Express, TypeScript, Groq SDK (`llama-3.1-8b-instant`)
+- **State Engine**: Finite State Machine, Conversation Memory, Curriculum Navigator
 
 ---
 
@@ -40,7 +95,7 @@ npm install
 npm run build
 npm start
 ```
-*Backend server runs on `http://localhost:5000`*
+*Backend server runs on `http://localhost:5001`*
 
 ### 2. Start Frontend Cockpit
 ```bash
@@ -48,112 +103,39 @@ cd frontend
 npm install
 npm run dev
 ```
-*Frontend application opens on `http://localhost:5173`*
+*Frontend application runs on `http://localhost:5173`*
 
 ---
 
 ## 🧪 Running Automated Test Suites
 
-The backend includes comprehensive automated test suites:
-
 ```bash
 cd backend
 
-# Phase 1: Test Candidate & Curriculum Dataset Loaders
+# Test Candidate & Curriculum Dataset Loaders
 npm run test:phase1
 
-# Phase 2: Test Express Server, Health & Session Store
+# Test Express Server, Health & Session Store
 npm run test:phase2
 
-# Deterministic Brain: Test CandidateAnalyzer, Planner, Memory, StateMachine & Evaluator
+# Test Deterministic Brain Components
 npm run test:brain
 
-# Orchestration Layer: Test PromptBuilder & InterviewEngine Turn Execution
+# Test Orchestrator & Turn Execution
 npm run test:orchestrator
 
-# Full End-to-End: Test Complete Multi-Turn Interview & Structured Feedback Output
+# Full End-to-End Multi-Turn Interview & Structured Feedback
 npm run test:e2e
 ```
 
 ---
 
-## 📋 API Specification Summary (`POST /api/interview`)
+## 🎯 Hackathon Presentation Demo Flow
 
-### Turn 1: Start Interview
-```json
-{
-  "sessionId": "session-101",
-  "candidate": { ... }
-}
-```
-**Response:**
-```json
-{
-  "reply": "Welcome Sarah Johnson. I'm excited to explore your 31-day AI Cohort learning journey...",
-  "done": false
-}
-```
-
-### Turn 2 to N-1: Turn Execution
-```json
-{
-  "sessionId": "session-101",
-  "message": "On Day 7, I implemented Sentence Transformers with cosine similarity distance."
-}
-```
-**Response:**
-```json
-{
-  "reply": "Building on what you mentioned, how did you evaluate vector recall in ChromaDB?",
-  "done": false
-}
-```
-
-### Turn N: Interview Completion & Structured Evaluation
-**Response:**
-```json
-{
-  "reply": "Thank you Sarah. That concludes our adaptive technical interview session...",
-  "done": true,
-  "feedback": {
-    "summary": "Sarah Johnson completed an 8-question technical evaluation...",
-    "strengths": [ ... ],
-    "gaps": [ ... ],
-    "next": [ ... ]
-  }
-}
-```
-
----
-
-## 📁 Repository Architecture Structure
-
-```
-interview-os/
-├── candidates.json           # 20 synthetic candidate profiles
-├── curriculum.json           # 31-day AI Cohort curriculum (8 modules, 155 objectives)
-├── technical-spec.md         # API contract & problem statement rules
-├── docs/
-│   ├── Build-Bible.md        # Comprehensive 23-section engineering reference
-│   └── Architecture.md       # Technical blueprint & implementation sequence
-├── backend/                  # Express + TypeScript API Server
-│   ├── src/
-│   │   ├── config/           # Type-safe environment loader
-│   │   ├── controllers/      # Express API controllers
-│   │   ├── data/             # Candidate & Curriculum dataset loaders
-│   │   ├── engine/           # CandidateAnalyzer, ResponseEvaluator, StateMachine
-│   │   ├── memory/           # ConversationMemory state store
-│   │   ├── middleware/       # Logger & centralized error handler
-│   │   ├── routes/           # Express router definitions
-│   │   ├── services/         # InterviewEngine, LLMClient, PromptBuilder, FeedbackEngine, DifficultyEngine
-│   │   ├── types/            # Shared TypeScript domain models
-│   │   └── validators/       # Zod request validation schemas
-│   └── package.json
-└── frontend/                 # React + Vite + TypeScript Web UI Cockpit
-    ├── src/
-    │   ├── components/       # Header, CandidateDrawer, InterviewCockpit, ChatInterface, FeedbackModal
-    │   ├── services/         # API integration client
-    │   ├── types/            # Frontend type definitions
-    │   └── App.tsx
-    └── package.json
-```
+1. **Landing Overview**: Present the Hero section, Animated Interview Journey Timeline (`Greeting` → `Questions` → `Probing` → `Analysis` → `Decision`), and Architecture section.
+2. **Select Candidate**: Open the Candidate Selector Drawer and pick any of the 20 cohort profiles.
+3. **Live Interview Session**:
+   - Candidate submits technical answers in the floating composer.
+   - Observe live cockpit metrics (Questions progress, Days progress, Difficulty meter, State indicator).
+   - Observe progressive probing on good answers (`basic` → `implementation` → `trade-offs`).
+4. **Executive Hiring Panel Report**: Complete the interview and inspect the 1–5 competency scorecard, 5-star topic ratings, evidence-backed strengths, specific gaps, and panel decision.

@@ -4,6 +4,7 @@ import { CandidateDrawer } from './components/CandidateDrawer';
 import { InterviewCockpit } from './components/InterviewCockpit';
 import { ChatInterface } from './components/ChatInterface';
 import { FeedbackModal } from './components/FeedbackModal';
+import { LandingPage } from './components/LandingPage';
 import type { CandidateProfile, ChatMessage, FeedbackObject } from './types';
 import { fetchCandidates, startInterviewSession, sendInterviewTurn } from './services/api';
 
@@ -12,6 +13,9 @@ export const App: React.FC = () => {
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateProfile | null>(null);
   const [isCandidateDrawerOpen, setIsCandidateDrawerOpen] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState(true);
+
+  // View Navigation: 'landing' (Hackathon Overview) vs 'interview' (Live Interview Cockpit)
+  const [viewMode, setViewMode] = useState<'landing' | 'interview'>('landing');
 
   // Session State
   const [sessionId, setSessionId] = useState<string>('');
@@ -160,6 +164,10 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleStartLiveDemo = () => {
+    setViewMode('interview');
+  };
+
   return (
     <div style={{ minHeight: '100vh', padding: '16px 20px 24px 20px', position: 'relative' }}>
       {/* Animated Low-Opacity Background Mesh */}
@@ -174,26 +182,38 @@ export const App: React.FC = () => {
         onOpenCandidateDrawer={() => setIsCandidateDrawerOpen(true)}
         onResetSession={handleResetSession}
         isBackendConnected={isBackendConnected}
+        viewMode={viewMode}
+        onSetViewMode={setViewMode}
       />
 
-      {/* Cockpit Status Bar */}
-      <InterviewCockpit
-        candidate={selectedCandidate}
-        questionCount={questionCount}
-        visitedDaysCount={visitedDaysCount}
-        difficulty={difficulty}
-        currentState={currentState}
-        currentDayTitle={currentDayTitle}
-        isComplete={isComplete}
-      />
+      {/* View Switcher: Landing / Arch Overview vs Live Interview Cockpit */}
+      {viewMode === 'landing' ? (
+        <LandingPage
+          onStartInterview={handleStartLiveDemo}
+          onOpenCandidateDrawer={() => setIsCandidateDrawerOpen(true)}
+        />
+      ) : (
+        <>
+          {/* Cockpit Status Bar */}
+          <InterviewCockpit
+            candidate={selectedCandidate}
+            questionCount={questionCount}
+            visitedDaysCount={visitedDaysCount}
+            difficulty={difficulty}
+            currentState={currentState}
+            currentDayTitle={currentDayTitle}
+            isComplete={isComplete}
+          />
 
-      {/* Chat Conversational View */}
-      <ChatInterface
-        messages={messages}
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-        isComplete={isComplete}
-      />
+          {/* Chat Conversational View */}
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            isComplete={isComplete}
+          />
+        </>
+      )}
 
       {/* Candidate Profile Selection Drawer */}
       <CandidateDrawer
@@ -201,7 +221,10 @@ export const App: React.FC = () => {
         onClose={() => setIsCandidateDrawerOpen(false)}
         candidates={candidates}
         selectedCandidateId={selectedCandidate?.member.id || null}
-        onSelectCandidate={handleSelectCandidate}
+        onSelectCandidate={(c) => {
+          handleSelectCandidate(c);
+          setViewMode('interview');
+        }}
       />
 
       {/* Feedback & Performance Modal */}

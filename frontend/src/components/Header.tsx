@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Users, RotateCcw, Sparkles } from 'lucide-react';
+import { Cpu, Users, RotateCcw, Sparkles, Layout, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { CandidateProfile } from '../types';
 
@@ -8,13 +8,17 @@ interface HeaderProps {
   onOpenCandidateDrawer: () => void;
   onResetSession: () => void;
   isBackendConnected: boolean;
+  viewMode?: 'landing' | 'interview';
+  onSetViewMode?: (mode: 'landing' | 'interview') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   selectedCandidate,
   onOpenCandidateDrawer,
   onResetSession,
-  isBackendConnected
+  isBackendConnected,
+  viewMode = 'landing',
+  onSetViewMode
 }) => {
   return (
     <header style={{ width: '100%', maxWidth: '1440px', margin: '0 auto 20px auto', position: 'relative' }}>
@@ -34,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <motion.div
             whileHover={{ scale: 1.05 }}
+            onClick={() => onSetViewMode && onSetViewMode('landing')}
             style={{
               width: '46px',
               height: '46px',
@@ -43,7 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 0 24px rgba(0, 229, 255, 0.4)',
-              position: 'relative'
+              position: 'relative',
+              cursor: 'pointer'
             }}
           >
             <Cpu size={26} color="#FFFFFF" />
@@ -52,7 +58,10 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#FFFFFF' }}>
+              <h1
+                onClick={() => onSetViewMode && onSetViewMode('landing')}
+                style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#FFFFFF', cursor: 'pointer' }}
+              >
                 Interview<span className="gradient-text">OS</span>
               </h1>
 
@@ -71,27 +80,60 @@ export const Header: React.FC<HeaderProps> = ({
               }}>
                 <Sparkles size={11} /> v2.0 Adaptive
               </span>
-
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                padding: '3px 10px',
-                borderRadius: '20px',
-                background: 'rgba(125, 211, 252, 0.08)',
-                color: '#7DD3FC',
-                border: '1px solid rgba(125, 211, 252, 0.2)'
-              }}>
-                Groq llama-3.1-8b
-              </span>
             </div>
 
             <p style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>Autonomous AI Technical Interview Platform</span>
               <span style={{ color: '#64748B' }}>•</span>
-              <span style={{ color: '#7DD3FC' }}>Evidence-Based Engine</span>
+              <span style={{ color: '#7DD3FC' }}>Groq llama-3.1-8b</span>
             </p>
           </div>
         </div>
+
+        {/* View Mode Navigation Tabs */}
+        {onSetViewMode && (
+          <div style={{ display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '12px', background: 'rgba(5, 8, 22, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <button
+              onClick={() => onSetViewMode('landing')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                background: viewMode === 'landing' ? 'rgba(79, 140, 255, 0.25)' : 'transparent',
+                color: viewMode === 'landing' ? '#FFFFFF' : '#94A3B8',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}
+            >
+              <Layout size={14} />
+              <span>Overview & Arch</span>
+            </button>
+
+            <button
+              onClick={() => onSetViewMode('interview')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                background: viewMode === 'interview' ? 'rgba(0, 229, 255, 0.25)' : 'transparent',
+                color: viewMode === 'interview' ? '#FFFFFF' : '#94A3B8',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}
+            >
+              <MessageSquare size={14} />
+              <span>Live Interview Cockpit</span>
+            </button>
+          </div>
+        )}
 
         {/* Center Controls: Candidate Selector Pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -101,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenCandidateDrawer}
             className="glass-pill"
             style={{
-              padding: '10px 20px',
+              padding: '8px 16px',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
@@ -114,8 +156,8 @@ export const Header: React.FC<HeaderProps> = ({
             }}
           >
             <div style={{
-              width: '26px',
-              height: '26px',
+              width: '24px',
+              height: '24px',
               borderRadius: '50%',
               background: 'rgba(0, 229, 255, 0.15)',
               display: 'flex',
@@ -128,11 +170,11 @@ export const Header: React.FC<HeaderProps> = ({
 
             {selectedCandidate ? (
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFFFFF', lineHeight: 1.1 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF', lineHeight: 1.1 }}>
                   {selectedCandidate.member.name}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-                  {selectedCandidate.member.jobRole} ({selectedCandidate.member.yearsExperience} yrs exp)
+                <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>
+                  {selectedCandidate.member.jobRole}
                 </div>
               </div>
             ) : (
@@ -147,20 +189,19 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onResetSession}
             title="Reset Interview Session"
             style={{
-              padding: '10px 14px',
-              borderRadius: '12px',
+              padding: '8px 12px',
+              borderRadius: '10px',
               background: 'rgba(255, 255, 255, 0.05)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               color: '#94A3B8',
-              fontSize: '0.82rem',
+              fontSize: '0.8rem',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              cursor: 'pointer'
             }}
           >
-            <RotateCcw size={15} />
+            <RotateCcw size={14} />
             <span>Reset</span>
           </motion.button>
         </div>
@@ -171,11 +212,11 @@ export const Header: React.FC<HeaderProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '6px 14px',
+            padding: '6px 12px',
             borderRadius: '20px',
             background: isBackendConnected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
             border: isBackendConnected ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
-            fontSize: '0.8rem',
+            fontSize: '0.78rem',
             fontWeight: 600,
             color: isBackendConnected ? '#10B981' : '#EF4444'
           }}>
@@ -186,20 +227,11 @@ export const Header: React.FC<HeaderProps> = ({
               backgroundColor: isBackendConnected ? '#10B981' : '#EF4444',
               boxShadow: isBackendConnected ? '0 0 10px #10B981' : '0 0 10px #EF4444'
             }} />
-            <span>{isBackendConnected ? 'Engine Connected' : 'Engine Disconnected'}</span>
+            <span>{isBackendConnected ? 'Connected' : 'Disconnected'}</span>
           </div>
         </div>
-      </div>
 
-      {/* Subtle Bottom Separator Gradient Line */}
-      <div style={{
-        position: 'absolute',
-        bottom: '-1px',
-        left: '5%',
-        right: '5%',
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.4) 50%, transparent 100%)'
-      }} />
+      </div>
     </header>
   );
 };

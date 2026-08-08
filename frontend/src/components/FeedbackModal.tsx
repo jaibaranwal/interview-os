@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, CheckCircle, AlertTriangle, ArrowRight, X, Copy, Check, ShieldCheck, Activity, BarChart2, Layers, MessageSquare, Terminal } from 'lucide-react';
+import { Award, CheckCircle, AlertTriangle, ArrowRight, X, Copy, Check, ShieldCheck, Activity, BarChart2, Layers, Terminal, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { FeedbackObject, CandidateProfile } from '../types';
 
@@ -38,10 +38,10 @@ HIRING PANEL DECISION:
 • Communication: ${feedback.panelDecision?.communication || 'Strong'}
 • Overall Recommendation: ${feedback.panelDecision?.overallStars || ''} ${feedback.hiringRecommendation}
 
-VERIFIED EVIDENCE-BACKED STRENGTHS:
-${feedback.strengths.map((s) => `• ${s}`).join('\n')}
+WHY THIS RECOMMENDATION? (VERIFIED EVIDENCE PROOFS):
+${feedback.strengths.map((s) => `✓ ${s}`).join('\n')}
 
-IDENTIFIED MISSING CONCEPTS & LEARNING GAPS:
+IDENTIFIED MISSING CONCEPTS & GAPS:
 ${feedback.gaps.map((g) => `• ${g}`).join('\n')}
 
 FOCUSED COHORT GROWTH ROADMAP:
@@ -184,7 +184,7 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
           {/* Modal Content View */}
           <div style={{ padding: '24px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-            {/* 1. Executive Hiring Dashboard Banner */}
+            {/* Executive Hiring Dashboard Banner */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -232,7 +232,7 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
               </div>
             </div>
 
-            {/* 2. Executive Evidence Summary */}
+            {/* Executive Evidence Summary */}
             <div style={{ background: 'rgba(16, 23, 40, 0.6)', borderRadius: '16px', padding: '18px 22px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <h3 style={{ fontSize: '0.82rem', fontWeight: 800, color: '#00E5FF', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Executive Evidence Summary
@@ -242,7 +242,22 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
               </p>
             </div>
 
-            {/* 3. Hiring Panel Decision & Interview Statistics (Two Columns) */}
+            {/* Task 3: Why This Recommendation? Section */}
+            <div style={{ background: 'rgba(0, 229, 255, 0.06)', borderRadius: '16px', padding: '18px 22px', border: '1px solid rgba(0, 229, 255, 0.25)' }}>
+              <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#00E5FF', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} /> Why This Recommendation? (Verified Evidence Proofs)
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {feedback.strengths.map((s, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.86rem', color: '#FFFFFF', lineHeight: '1.5' }}>
+                    <Check size={16} color="#10B981" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <span>{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hiring Panel Decision & Interview Statistics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
               
               {/* Hiring Panel Decision Breakdown */}
@@ -299,7 +314,7 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
 
             </div>
 
-            {/* 4. Competency Scorecard (5-Star Scale) */}
+            {/* Competency Scorecard */}
             {feedback.competencyScores && (
               <div style={{ background: 'rgba(16, 23, 40, 0.6)', borderRadius: '16px', padding: '18px 22px', border: '1px solid rgba(0, 229, 255, 0.2)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -330,7 +345,7 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
               </div>
             )}
 
-            {/* 5. Topic Performance Grid (5-Star Ratings) */}
+            {/* Topic Performance Grid */}
             {feedback.topicPerformance && feedback.topicPerformance.length > 0 && (
               <div style={{ background: 'rgba(16, 23, 40, 0.6)', borderRadius: '16px', padding: '18px 22px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <h4 style={{ fontSize: '0.82rem', fontWeight: 800, color: '#7DD3FC', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -347,10 +362,8 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
               </div>
             )}
 
-            {/* 6. Strengths & Weaknesses (Two Column Layout) */}
+            {/* Strengths & Weaknesses */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-              
-              {/* Evidence-Backed Strengths */}
               <div style={{ background: 'rgba(16, 185, 129, 0.06)', borderRadius: '16px', padding: '18px 20px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                 <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#10B981', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CheckCircle size={16} /> Verified Evidence-Backed Strengths (Max 3)
@@ -365,7 +378,6 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
                 </ul>
               </div>
 
-              {/* Specific Missing-Concept Weaknesses */}
               <div style={{ background: 'rgba(245, 158, 11, 0.06)', borderRadius: '16px', padding: '18px 20px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
                 <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#F59E0B', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <AlertTriangle size={16} /> Identified Missing Concepts & Gaps (Max 5)
@@ -379,10 +391,9 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
                   ))}
                 </ul>
               </div>
-
             </div>
 
-            {/* 7. Focused Growth Roadmap */}
+            {/* Growth Roadmap */}
             <div style={{ background: 'rgba(168, 85, 247, 0.06)', borderRadius: '16px', padding: '18px 20px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
               <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#A855F7', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ArrowRight size={16} /> Focused Weak-Area Growth Roadmap (Max 3)
