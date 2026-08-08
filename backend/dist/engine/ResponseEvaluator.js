@@ -38,8 +38,6 @@ Target Tools: ${dayTools}
 Target Objectives: ${dayObjectives}
 Previous Interviewer Question: "${previousQuestion || 'Explain your implementation'}"
 
-Candidate Answer: "${trimmed}"
-
 Evaluate the candidate's technical answer strictly against the target objectives and tools.
 Return a valid JSON object matching this EXACT schema:
 {
@@ -56,20 +54,21 @@ Return a valid JSON object matching this EXACT schema:
 }
 
 Rules:
-- If answer is "I don't know", random text, or irrelevant, set score < 20, correctness "INVALID", and next_action "retry".
-- If answer mentions relevant tools/concepts but lacks detail, set score 50-69, correctness "WEAK", and next_action "follow_up".
-- If answer demonstrates solid technical understanding, set score >= 75, correctness "ADEQUATE" or "EXEMPLARY", and next_action "advance".
+- If candidate answer is "I don't know", random text, or irrelevant, set score < 20, correctness "INVALID", and next_action "retry".
+- If candidate answer mentions relevant tools/concepts but lacks detail, set score 50-69, correctness "WEAK", and next_action "follow_up".
+- If candidate answer demonstrates solid technical understanding, set score >= 75, correctness "ADEQUATE" or "EXEMPLARY", and next_action "advance".
 Output ONLY valid JSON with no extra text or markdown formatting.`;
         try {
-            const llmOutput = await this.llmClient.generate(systemPrompt, '');
+            const llmOutput = await this.llmClient.generate(systemPrompt, trimmed);
             const jsonMatch = llmOutput.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
                 if (typeof parsed.score === 'number' && parsed.next_action) {
+                    logger_1.Logger.info(`LLM Evaluation produced score ${parsed.score} (${parsed.correctness}), decision: ${parsed.next_action}`);
                     return {
                         ...parsed,
                         score: Math.min(100, Math.max(0, parsed.score)),
-                        confidence: Math.min(100, Math.max(0, parsed.confidence || 50))
+                        confidence: Math.min(100, Math.max(0, parsed.confidence || 85))
                     };
                 }
             }

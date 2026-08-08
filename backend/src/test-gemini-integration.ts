@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import { LLMClient } from './services/LLMClient';
 
 async function testGeminiIntegration() {
+
   console.log('==================================================');
   console.log('   INTERVIEWOS GEMINI INTEGRATION VERIFICATION');
   console.log('==================================================\n');
