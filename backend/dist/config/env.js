@@ -6,9 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-// Future responsibility: Environment variable loading and type-safe configuration mapping
+// Type-safe environment variable loading (Default port 5001 to avoid macOS ControlCenter conflict on 5000)
 exports.config = {
-    port: process.env.PORT || 5000,
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5001,
     nodeEnv: process.env.NODE_ENV || 'development',
     llmApiKey: process.env.LLM_API_KEY || '',
     llmBaseUrl: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
