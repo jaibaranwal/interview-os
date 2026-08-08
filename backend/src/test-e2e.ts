@@ -73,29 +73,24 @@ async function runE2ETest() {
         'During Day 28 Production Deployment, I deployed vLLM on Kubernetes with Triton inference server metrics.'
       ];
 
+      let turnIndex = 0;
       let lastResponse: any;
 
-      for (let i = 0; i < candidateTurns.length; i++) {
-        console.log(`🔹 Turn ${i + 2}: Sending Candidate Response ...`);
+      while (turnIndex < 15) {
+        const turnMessage = candidateTurns[turnIndex % candidateTurns.length];
+        console.log(`🔹 Turn ${turnIndex + 2}: Sending Candidate Response ...`);
         lastResponse = await makeRequest('POST', '/api/interview', {
           sessionId,
-          message: candidateTurns[i]
+          message: turnMessage
         });
         console.log(`   Reply: "${lastResponse.data.reply.slice(0, 100)}..."`);
         console.log(`   Done State: ${lastResponse.data.done}`);
+        turnIndex++;
+
         if (lastResponse.data.done) {
-          console.log(`   🎉 Interview completed early at Turn ${i + 2}!`);
+          console.log(`   🎉 Interview completed at Turn ${turnIndex + 1}!`);
           break;
         }
-      }
-
-      if (!lastResponse.data.done) {
-        // Trigger one final turn to finalize feedback if needed
-        console.log('\n🔹 Triggering final evaluation completion turn ...');
-        lastResponse = await makeRequest('POST', '/api/interview', {
-          sessionId,
-          message: 'I have summarized all my work across the cohort.'
-        });
       }
 
       console.log('\n==================================================');

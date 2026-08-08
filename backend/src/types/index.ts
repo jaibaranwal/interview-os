@@ -123,6 +123,7 @@ export interface InterviewResponse {
   currentState?: string;
   currentDayTitle?: string;
   llmCallCount?: number;
+  evidenceProgress?: number; // 0-100% evidence collection score
 }
 
 export type CorrectnessClassification =

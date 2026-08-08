@@ -156,6 +156,16 @@ class InterviewEngine {
                 messages: updatedMessages,
                 metadata: session.metadata
             });
+            const calculateEvidenceProgress = () => {
+                const qCount = memory.getQuestionCount();
+                const vCount = memory.getVisitedDays().length;
+                const evals = memory.getEvaluations();
+                const solidAnswers = evals.filter((e) => e.score >= 30 || ['GOOD', 'EXCELLENT'].includes(e.correctness)).length;
+                const qProg = Math.min(50, Math.round((qCount / 8) * 50));
+                const dProg = Math.min(30, Math.round((vCount / 4) * 30));
+                const cProg = Math.min(20, Math.round((solidAnswers / 4) * 20));
+                return Math.min(100, Math.max(0, qProg + dProg + cProg));
+            };
             const latencyMs = Date.now() - startTime;
             logger_1.Logger.info(`[METRIC] Session ${sessionId} COMPLETED | LLM Calls: ${llmCallCount} | Latency: ${latencyMs}ms`);
             return {
@@ -167,7 +177,8 @@ class InterviewEngine {
                 difficulty: memory.getDifficulty(),
                 currentState: stateManager.getState(),
                 currentDayTitle: topicAfter,
-                llmCallCount
+                llmCallCount,
+                evidenceProgress: 100
             };
         }
         // ─── 4. Generate Grounded Interviewer Question ───────────────────────────
@@ -213,6 +224,16 @@ class InterviewEngine {
         const latencyMs = Date.now() - startTime;
         // Instrumentation Metric Log: verify exactly <=2 LLM calls per candidate turn and 0 for greeting
         logger_1.Logger.info(`[METRIC] Session ${sessionId} Turn ${memory.getQuestionCount()} completed | LLM Calls: ${llmCallCount} (max 2) | Latency: ${latencyMs}ms`);
+        const calculateEvidenceProgress = () => {
+            const qCount = memory.getQuestionCount();
+            const vCount = memory.getVisitedDays().length;
+            const evals = memory.getEvaluations();
+            const solidAnswers = evals.filter((e) => e.score >= 30 || ['GOOD', 'EXCELLENT'].includes(e.correctness)).length;
+            const qProg = Math.min(50, Math.round((qCount / 8) * 50));
+            const dProg = Math.min(30, Math.round((vCount / 4) * 30));
+            const cProg = Math.min(20, Math.round((solidAnswers / 4) * 20));
+            return Math.min(100, Math.max(0, qProg + dProg + cProg));
+        };
         // ─── 7. Return response with real metrics ────────────────────────────────
         return {
             reply: questionText,
@@ -222,7 +243,8 @@ class InterviewEngine {
             difficulty: memory.getDifficulty(),
             currentState: stateManager.getState(),
             currentDayTitle: topicAfter,
-            llmCallCount
+            llmCallCount,
+            evidenceProgress: calculateEvidenceProgress()
         };
     }
 }

@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   const [difficulty, setDifficulty] = useState(2.5);
   const [currentState, setCurrentState] = useState('GREETING');
   const [currentDayTitle, setCurrentDayTitle] = useState('');
+  const [evidenceProgress, setEvidenceProgress] = useState(0);
 
   const [feedback, setFeedback] = useState<FeedbackObject | null>(null);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -55,6 +56,7 @@ export const App: React.FC = () => {
     setDifficulty(2.5);
     setCurrentState('GREETING');
     setCurrentDayTitle('');
+    setEvidenceProgress(0);
 
     try {
       const res = await startInterviewSession(newSessionId, candidate);
@@ -70,6 +72,7 @@ export const App: React.FC = () => {
       if (res.difficulty !== undefined) setDifficulty(res.difficulty);
       if (res.currentState) setCurrentState(res.currentState);
       if (res.currentDayTitle) setCurrentDayTitle(res.currentDayTitle);
+      if (res.evidenceProgress !== undefined) setEvidenceProgress(res.evidenceProgress);
     } catch (err: any) {
       setIsBackendConnected(false);
       const errorMessage: ChatMessage = {
@@ -133,6 +136,7 @@ export const App: React.FC = () => {
       if (res.difficulty !== undefined) setDifficulty(res.difficulty);
       if (res.currentState) setCurrentState(res.done ? 'COMPLETED' : res.currentState);
       if (res.currentDayTitle) setCurrentDayTitle(res.currentDayTitle);
+      if (res.evidenceProgress !== undefined) setEvidenceProgress(res.evidenceProgress);
 
       if (res.done && res.feedback) {
         setIsComplete(true);
@@ -203,6 +207,7 @@ export const App: React.FC = () => {
             currentState={currentState}
             currentDayTitle={currentDayTitle}
             isComplete={isComplete}
+            evidenceProgress={evidenceProgress}
           />
 
           {/* Chat Conversational View */}

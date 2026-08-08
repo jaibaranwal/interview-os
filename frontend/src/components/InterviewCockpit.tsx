@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Calendar, Activity, CheckCircle2, BookOpen, Brain, Sparkles, Volume2 } from 'lucide-react';
+import { Calendar, Activity, CheckCircle2, BookOpen, Brain, Sparkles, Volume2, ShieldCheck, BarChart3, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { CandidateProfile } from '../types';
 
@@ -11,6 +11,7 @@ interface InterviewCockpitProps {
   currentState: string;
   currentDayTitle: string;
   isComplete: boolean;
+  evidenceProgress?: number;
 }
 
 export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
@@ -19,13 +20,30 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
   difficulty,
   currentState,
   currentDayTitle,
-  isComplete
+  isComplete,
+  evidenceProgress = 0
 }) => {
   const minQuestions = 8;
   const minDays = 4;
 
-  const questionProgress = Math.min(100, Math.round((questionCount / minQuestions) * 100));
+  const computedEvidence = isComplete
+    ? 100
+    : Math.min(100, Math.max(evidenceProgress, Math.round((questionCount / minQuestions) * 50 + (visitedDaysCount / minDays) * 30)));
+
   const daysProgress = Math.min(100, Math.round((visitedDaysCount / minDays) * 100));
+
+  // Dynamic Interview Status Badge
+  const getInterviewStatus = () => {
+    if (isComplete) {
+      return { label: 'Ready for Evaluation', color: '#10B981', bg: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.4)' };
+    }
+    if (questionCount >= minQuestions) {
+      return { label: 'Final Validation...', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.4)' };
+    }
+    return { label: 'Collecting Evidence...', color: '#00E5FF', bg: 'rgba(0, 229, 255, 0.18)', border: 'rgba(0, 229, 255, 0.4)' };
+  };
+
+  const statusBadge = getInterviewStatus();
 
   // Color-coded difficulty configuration
   const difficultyBadge =
@@ -58,26 +76,25 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
   };
 
   const stateInfo = getStateInfo(isComplete ? 'COMPLETED' : currentState);
-  const StateIcon = stateInfo.icon;
 
   return (
     <div style={{ width: '100%', maxWidth: '1440px', margin: '0 auto 20px auto' }}>
       <div className="glass-card" style={{
-        padding: '16px 24px',
+        padding: '18px 24px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '20px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '16px',
         alignItems: 'center',
-        background: 'rgba(16, 23, 40, 0.75)',
+        background: 'rgba(15, 23, 42, 0.8)',
         border: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
 
         {/* 1. Active Topic Timeline Widget */}
-        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
             background: 'rgba(16, 185, 129, 0.12)',
             border: '1px solid rgba(16, 185, 129, 0.25)',
             color: '#10B981',
@@ -86,14 +103,14 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <BookOpen size={20} />
+            <BookOpen size={18} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Active Curriculum Topic
             </div>
             <div style={{
-              fontSize: '0.88rem',
+              fontSize: '0.84rem',
               fontWeight: 700,
               color: '#FFFFFF',
               whiteSpace: 'nowrap',
@@ -106,12 +123,12 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
           </div>
         </motion.div>
 
-        {/* 2. Questions Progress Widget */}
-        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* 2. Questions Asked Widget */}
+        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
             background: 'rgba(0, 229, 255, 0.12)',
             border: '1px solid rgba(0, 229, 255, 0.25)',
             color: '#00E5FF',
@@ -120,32 +137,27 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <Target size={20} />
+            <HelpCircle size={18} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: '#94A3B8', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '2px' }}>
               <span style={{ fontWeight: 600 }}>Questions Asked</span>
-              <span style={{ fontWeight: 800, color: questionCount >= minQuestions ? '#10B981' : '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {questionCount} / 8+ {questionCount >= minQuestions && !isComplete && <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>Gathering Evidence...</span>}
+              <span style={{ fontWeight: 800, color: questionCount >= minQuestions ? '#10B981' : '#FFFFFF' }}>
+                {questionCount}
               </span>
             </div>
-            <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${questionProgress}%` }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                style={{ height: '100%', background: 'linear-gradient(90deg, #00E5FF 0%, #4F8CFF 100%)', borderRadius: '4px' }}
-              />
+            <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 500 }}>
+              Min 8 · Max 15
             </div>
           </div>
         </motion.div>
 
-        {/* 3. Days / Curriculum Coverage Widget */}
-        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* 3. Topics Covered Widget */}
+        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
             background: 'rgba(168, 85, 247, 0.12)',
             border: '1px solid rgba(168, 85, 247, 0.25)',
             color: '#A855F7',
@@ -154,16 +166,16 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <Calendar size={20} />
+            <Calendar size={18} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: '#94A3B8', marginBottom: '6px' }}>
-              <span style={{ fontWeight: 600 }}>Days Covered</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>
+              <span style={{ fontWeight: 600 }}>Topics Covered</span>
               <span style={{ fontWeight: 800, color: visitedDaysCount >= minDays ? '#10B981' : '#FFFFFF' }}>
-                {visitedDaysCount} / {minDays} ({daysProgress}%)
+                {visitedDaysCount} / {minDays}
               </span>
             </div>
-            <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '5px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${daysProgress}%` }}
@@ -174,12 +186,46 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
           </div>
         </motion.div>
 
-        {/* 4. Adaptive Difficulty Widget */}
-        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* 4. Evidence Progress Widget */}
+        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            color: '#10B981',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <BarChart3 size={18} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>
+              <span style={{ fontWeight: 600 }}>Evidence Progress</span>
+              <span style={{ fontWeight: 800, color: computedEvidence >= 100 ? '#10B981' : '#00E5FF' }}>
+                {computedEvidence}%
+              </span>
+            </div>
+            <div style={{ width: '100%', height: '5px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${computedEvidence}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                style={{ height: '100%', background: 'linear-gradient(90deg, #00E5FF 0%, #10B981 100%)', borderRadius: '4px' }}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 5. Adaptive Difficulty Widget */}
+        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
             background: difficultyBadge.bg,
             border: `1px solid ${difficultyBadge.border}`,
             color: difficultyBadge.color,
@@ -188,18 +234,15 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <Activity size={20} />
+            <Activity size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Adaptive Difficulty
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Difficulty ({difficulty.toFixed(1)})
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-              <span style={{ fontSize: '1rem', fontWeight: 900, color: '#FFFFFF' }}>
-                {difficulty.toFixed(1)}
-              </span>
+            <div style={{ marginTop: '2px' }}>
               <span style={{
-                fontSize: '0.7rem',
+                fontSize: '0.68rem',
                 fontWeight: 800,
                 padding: '2px 8px',
                 borderRadius: '6px',
@@ -213,22 +256,26 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
           </div>
         </motion.div>
 
-        {/* 5. FSM State Widget */}
-        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
+        {/* 6. Interview Status Badge */}
+        <motion.div whileHover={{ translateY: -2 }} style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '12px',
-            background: stateInfo.bg,
-            border: `1px solid ${stateInfo.color}40`,
-            color: stateInfo.color
+            gap: '6px',
+            padding: '6px 12px',
+            borderRadius: '10px',
+            background: statusBadge.bg,
+            border: `1px solid ${statusBadge.border}`,
+            color: statusBadge.color
           }}>
-            <StateIcon size={16} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.02em' }}>
-              {stateInfo.label}
+            <ShieldCheck size={14} />
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.02em' }}>
+              {statusBadge.label}
             </span>
+          </div>
+
+          <div style={{ fontSize: '0.7rem', color: stateInfo.color, fontWeight: 700 }}>
+            {stateInfo.label}
           </div>
         </motion.div>
 

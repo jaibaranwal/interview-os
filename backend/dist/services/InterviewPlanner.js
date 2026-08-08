@@ -84,14 +84,14 @@ class InterviewPlanner {
     }
     hasSufficientCoverage(visitedDays, questionCount, evaluations = []) {
         const MIN_QUESTIONS = 8;
-        const MAX_QUESTIONS = 12;
+        const MAX_QUESTIONS = 15;
         const MIN_DAYS = 4;
         const distinctDaysCount = new Set(visitedDays).size;
         // Absolute minimum criteria: at least 8 questions and 4 curriculum days
         if (questionCount < MIN_QUESTIONS || distinctDaysCount < MIN_DAYS) {
             return false;
         }
-        // Hard safety cap: never exceed MAX_QUESTIONS (12)
+        // Hard safety cap: never exceed MAX_QUESTIONS (15)
         if (questionCount >= MAX_QUESTIONS) {
             return true;
         }
