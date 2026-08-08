@@ -7,14 +7,26 @@ import { Logger } from './utils/logger';
 
 const app = express();
 
-// 1. Configure Middleware
-app.use(cors({ origin: '*' }));
-app.use(express.json());
+// 1. Security Middleware
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGIN || '*';
+app.use(cors({
+  origin: allowedOrigins === '*' ? '*' : allowedOrigins.split(',').map(o => o.trim()),
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
+// Body size limit — prevents DoS via huge payloads
+app.use(express.json({ limit: '50kb' }));
 app.use(requestLogger);
 
 // 2. Health Check Endpoint
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    provider: config.llmProvider,
+    model: config.llmModel
+  });
 });
 
 // 3. Register API Routes

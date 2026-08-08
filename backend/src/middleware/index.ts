@@ -25,3 +25,4 @@ export const errorHandler = (
     message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred.'
   });
 };
+

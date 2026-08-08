@@ -20,6 +20,13 @@ export interface MistakeRecord {
   timestamp: Date;
 }
 
+export interface ConversationTurn {
+  question: string;
+  answer: string;
+  dayNum: number;
+  dayTitle: string;
+}
+
 export class ConversationMemory {
   private visitedDaysSet: Set<number> = new Set();
   private askedQuestionsList: AskedQuestionRecord[] = [];
@@ -28,14 +35,16 @@ export class ConversationMemory {
   private strengthsList: Set<string> = new Set();
   private weaknessesList: Set<string> = new Set();
   private questionCountNum: number = 0;
-  private currentDifficultyScalar: number = 2.5; // Default mid difficulty
+  private currentDifficultyScalar: number = 2.5;
   private topicHistoryList: number[] = [];
 
-  // Enhanced Evaluation & Retry State
+  // Sliding conversation window for LLM context
+  private conversationTurns: ConversationTurn[] = [];
+
+  // Evaluation history (single source of truth)
   private evaluationsList: LLMEvaluationResult[] = [];
   private scoresList: number[] = [];
   private confidenceList: number[] = [];
-  private retryMap: Map<number, number> = new Map<number, number>();
 
   public markDayVisited(day: number): void {
     this.visitedDaysSet.add(day);
@@ -63,38 +72,50 @@ export class ConversationMemory {
     });
   }
 
+  public recordConversationTurn(question: string, answer: string, dayNum: number, dayTitle: string): void {
+    this.conversationTurns.push({ question, answer, dayNum, dayTitle });
+  }
+
+  public getRecentContext(n: number = 3): string {
+    const recent = this.conversationTurns.slice(-n);
+    if (recent.length === 0) return '(No prior conversation)';
+
+    return recent.map((t, i) => {
+      const label = recent.length === 1 ? 'Previous' : `Turn -${recent.length - i}`;
+      return `[${label} | Day ${t.dayNum}: ${t.dayTitle}]\nInterviewer: ${t.question}\nCandidate: ${t.answer}`;
+    }).join('\n\n');
+  }
+
   public recordEvaluation(evalResult: LLMEvaluationResult, currentDay: number): void {
     this.evaluationsList.push(evalResult);
     this.scoresList.push(evalResult.score);
     this.confidenceList.push(evalResult.confidence);
 
-    if (evalResult.strengths) {
-      evalResult.strengths.forEach((s) => this.strengthsList.add(s));
+    const isGoodTurn = ['GOOD', 'EXCELLENT'].includes(evalResult.correctness) || evalResult.score >= 60;
+    if (isGoodTurn) {
+      if (evalResult.detected_concepts && evalResult.detected_concepts.length > 0) {
+        evalResult.detected_concepts.forEach((c) => {
+          if (c && c.length > 2) {
+            this.strengthsList.add(`Demonstrated understanding of ${c}`);
+          }
+        });
+      }
+      if (evalResult.strengths && evalResult.strengths.length > 0) {
+        evalResult.strengths.forEach((s) => {
+          if (s && !s.toLowerCase().includes('no technical strengths')) {
+            this.strengthsList.add(s);
+          }
+        });
+      }
     }
-    if (evalResult.weaknesses) {
+
+    if (evalResult.weaknesses && evalResult.weaknesses.length > 0) {
       evalResult.weaknesses.forEach((w) => this.weaknessesList.add(w));
     }
-
-    if (evalResult.next_action === 'retry') {
-      this.incrementRetryCount(currentDay);
-    } else if (evalResult.next_action === 'advance') {
-      this.resetRetryCount(currentDay);
-    }
   }
 
-  public getRetryCountForDay(day: number): number {
-    return this.retryMap.get(day) || 0;
-  }
-
-  public incrementRetryCount(day: number): number {
-    const current = this.getRetryCountForDay(day);
-    const updated = current + 1;
-    this.retryMap.set(day, updated);
-    return updated;
-  }
-
-  public resetRetryCount(day: number): void {
-    this.retryMap.set(day, 0);
+  public getEvaluations(): LLMEvaluationResult[] {
+    return this.evaluationsList;
   }
 
   public getLastEvaluation(): LLMEvaluationResult | null {
@@ -116,12 +137,7 @@ export class ConversationMemory {
   }
 
   public recordMistake(day: number, concept: string, detail: string): void {
-    this.mistakesList.push({
-      day,
-      concept,
-      detail,
-      timestamp: new Date()
-    });
+    this.mistakesList.push({ day, concept, detail, timestamp: new Date() });
   }
 
   public recordStrength(strength: string): void {
@@ -142,6 +158,10 @@ export class ConversationMemory {
 
   public getAskedQuestions(): AskedQuestionRecord[] {
     return this.askedQuestionsList;
+  }
+
+  public getAskedQuestionTexts(): string[] {
+    return this.askedQuestionsList.map((q) => q.text);
   }
 
   public getCandidateAnswers(): CandidateAnswerRecord[] {
@@ -172,9 +192,22 @@ export class ConversationMemory {
     return this.topicHistoryList;
   }
 
-  public isQuestionAsked(objective: string): boolean {
-    return this.askedQuestionsList.some(
-      (q) => q.objective.toLowerCase() === objective.toLowerCase()
-    );
+  public isQuestionAsked(text: string): boolean {
+    const normalizedNew = text.toLowerCase().trim();
+    return this.askedQuestionsList.some((q) => {
+      const normalizedExisting = q.text.toLowerCase().trim();
+      return normalizedExisting === normalizedNew
+        || (normalizedNew.length > 40 && normalizedExisting.startsWith(normalizedNew.slice(0, 60)));
+    });
+  }
+
+  public getLastCandidateAnswer(): string | undefined {
+    const answers = this.candidateAnswersList;
+    return answers.length > 0 ? answers[answers.length - 1].text : undefined;
+  }
+
+  public getPreviousCandidateAnswer(): string | undefined {
+    const answers = this.candidateAnswersList;
+    return answers.length > 1 ? answers[answers.length - 2].text : undefined;
   }
 }

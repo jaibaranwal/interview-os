@@ -14,7 +14,10 @@
     "test:e2e": "ts-node src/test-e2e.ts",
     "test:audit": "ts-node src/test-audit.ts",
     "test:gemini": "ts-node src/test-gemini-integration.ts",
-    "test:groq": "ts-node src/test-groq-integration.ts"
+    "test:groq": "ts-node src/test-groq-integration.ts",
+    "test:sequence": "ts-node src/test-live-sequence.ts",
+    "test:flow": "ts-node src/test-real-interview-flow.ts",
+    "test:scenarios": "ts-node src/test-comprehensive-scenarios.ts"
   },
   "keywords": [],
   "author": "",

@@ -14,8 +14,8 @@ class InterviewController {
         const parseResult = interview_validator_1.interviewRequestSchema.safeParse(req.body);
         if (!parseResult.success) {
             const errorMsg = parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
-            res.status(400).json({
-                error: 'Bad Request',
+            res.status(422).json({
+                error: 'Validation Error',
                 details: errorMsg
             });
             return;
@@ -26,10 +26,20 @@ class InterviewController {
             res.status(200).json(response);
         }
         catch (err) {
-            logger_1.Logger.error(`InterviewController error on session '${req.body?.sessionId}':`, err.message);
-            res.status(400).json({
-                error: 'Bad Request',
-                details: err.message
+            const sessionId = req.body?.sessionId;
+            logger_1.Logger.error(`InterviewController error on session '${sessionId}':`, err.message);
+            // 404 for session not found
+            if (err.message?.includes('not found') || err.message?.includes('Session')) {
+                res.status(404).json({
+                    error: 'Session Not Found',
+                    details: err.message
+                });
+                return;
+            }
+            // 500 for all other unexpected errors
+            res.status(500).json({
+                error: 'Interview Engine Error',
+                details: process.env.NODE_ENV === 'development' ? err.message : 'An error occurred processing this interview turn. Please try again.'
             });
         }
     };

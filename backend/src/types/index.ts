@@ -64,24 +64,48 @@ export interface FeedbackObject {
   strengths: string[];
   gaps: string[];
   next: string[];
+  communicationAssessment?: string;
+  topicsDemonstrated?: string[];
+  topicsSkipped?: string[];
+  hiringRecommendation?: string;
 }
 
 export interface InterviewResponse {
   reply: string;
   done: boolean;
   feedback?: FeedbackObject;
+  // Real-time cockpit metadata from backend state
+  questionCount?: number;
+  visitedDaysCount?: number;
+  difficulty?: number;
+  currentState?: string;
+  currentDayTitle?: string;
+  llmCallCount?: number;
 }
+
+export type CorrectnessClassification =
+  | 'EXCELLENT'
+  | 'GOOD'
+  | 'WEAK'
+  | 'UNCERTAIN'
+  | 'GIBBERISH'
+  | 'OFF_TOPIC'
+  | 'PROFANITY'
+  | 'REFUSAL'
+  | 'LACK_OF_EXPERIENCE';
+
+export type NextActionDecision = 'retry' | 'follow_up' | 'advance' | 'terminate';
 
 export interface LLMEvaluationResult {
   score: number; // 0-100
   confidence: number; // 0-100
-  correctness: 'EXEMPLARY' | 'ADEQUATE' | 'WEAK' | 'INVALID';
+  correctness: CorrectnessClassification;
   detected_concepts: string[];
   missing_concepts: string[];
   strengths: string[];
   weaknesses: string[];
-  follow_up_needed: boolean;
-  recommended_difficulty: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
-  next_action: 'retry' | 'follow_up' | 'advance';
+  next_action: NextActionDecision;
+  reason: string;
+  recommended_difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
   raw_reasoning?: string;
 }

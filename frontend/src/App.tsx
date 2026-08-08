@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { CandidateDrawer } from './components/CandidateDrawer';
 import { InterviewCockpit } from './components/InterviewCockpit';
@@ -19,33 +19,27 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
-  // Live Cockpit Metrics
+  // Cockpit metrics
   const [questionCount, setQuestionCount] = useState(0);
   const [visitedDaysCount, setVisitedDaysCount] = useState(0);
   const [difficulty, setDifficulty] = useState(2.5);
   const [currentState, setCurrentState] = useState('GREETING');
+  const [currentDayTitle, setCurrentDayTitle] = useState('');
+
   const [feedback, setFeedback] = useState<FeedbackObject | null>(null);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
-  // Load Candidates on Mount
-  useEffect(() => {
-    fetchCandidates()
-      .then((data) => {
-        setCandidates(data);
-        if (data.length > 0) {
-          handleSelectCandidate(data[0]); // Default to CAND-001
-        }
-        setIsBackendConnected(true);
-      })
-      .catch((err) => {
-        console.error("Failed to load candidates from backend server:", err);
-        setIsBackendConnected(false);
-      });
-  }, []);
+  // Ref guards to eliminate duplicate React StrictMode effect executions & duplicate API calls
+  const hasFetchedCandidatesRef = useRef(false);
+  const activeInitializingCandidateIdRef = useRef<string | null>(null);
 
+  const handleSelectCandidate = useCallback(async (candidate: CandidateProfile) => {
+    // Guard against duplicate concurrent initialization for the same candidate
+    if (activeInitializingCandidateIdRef.current === candidate.member.id) {
+      return;
+    }
+    activeInitializingCandidateIdRef.current = candidate.member.id;
 
-
-  const handleSelectCandidate = async (candidate: CandidateProfile) => {
     setSelectedCandidate(candidate);
     const newSessionId = `session-${candidate.member.id}-${Date.now()}`;
     setSessionId(newSessionId);
@@ -54,9 +48,10 @@ export const App: React.FC = () => {
     setIsComplete(false);
     setFeedback(null);
     setQuestionCount(0);
-    setVisitedDaysCount(1);
-    setDifficulty(candidate.member.yearsExperience > 5 ? 3.5 : 2.5);
+    setVisitedDaysCount(0);
+    setDifficulty(2.5);
     setCurrentState('GREETING');
+    setCurrentDayTitle('');
 
     try {
       const res = await startInterviewSession(newSessionId, candidate);
@@ -68,13 +63,42 @@ export const App: React.FC = () => {
       };
       setMessages([initialMessage]);
       setIsBackendConnected(true);
+
+      if (res.difficulty !== undefined) setDifficulty(res.difficulty);
+      if (res.currentState) setCurrentState(res.currentState);
+      if (res.currentDayTitle) setCurrentDayTitle(res.currentDayTitle);
     } catch (err: any) {
-      console.error(err);
       setIsBackendConnected(false);
+      const errorMessage: ChatMessage = {
+        id: `err-${Date.now()}`,
+        role: 'interviewer',
+        content: '⚠️ Unable to connect to the interview system. Please check that the backend is running and try again.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages([errorMessage]);
     } finally {
       setIsLoading(false);
+      activeInitializingCandidateIdRef.current = null;
     }
-  };
+  }, []);
+
+  // Load Candidates on Mount — guarded against React 18 StrictMode double execution
+  useEffect(() => {
+    if (hasFetchedCandidatesRef.current) return;
+    hasFetchedCandidatesRef.current = true;
+
+    fetchCandidates()
+      .then((data) => {
+        setCandidates(data);
+        setIsBackendConnected(true);
+        if (data.length > 0) {
+          handleSelectCandidate(data[0]);
+        }
+      })
+      .catch(() => {
+        setIsBackendConnected(false);
+      });
+  }, [handleSelectCandidate]);
 
   const handleSendMessage = async (text: string) => {
     if (!sessionId || isLoading || isComplete) return;
@@ -101,11 +125,11 @@ export const App: React.FC = () => {
 
       setMessages((prev) => [...prev, botMessage]);
 
-      // Update cockpit counters
-      setQuestionCount((prevCount) => prevCount + 1);
-      setVisitedDaysCount(() => Math.min(8, Math.max(1, Math.floor((questionCount + 2) / 2))));
-      setDifficulty((prevDiff) => Math.min(5.0, Math.max(1.0, prevDiff + 0.1)));
-      setCurrentState(res.done ? 'COMPLETED' : 'LISTENING');
+      if (res.questionCount !== undefined) setQuestionCount(res.questionCount);
+      if (res.visitedDaysCount !== undefined) setVisitedDaysCount(res.visitedDaysCount);
+      if (res.difficulty !== undefined) setDifficulty(res.difficulty);
+      if (res.currentState) setCurrentState(res.done ? 'COMPLETED' : res.currentState);
+      if (res.currentDayTitle) setCurrentDayTitle(res.currentDayTitle);
 
       if (res.done && res.feedback) {
         setIsComplete(true);
@@ -113,11 +137,15 @@ export const App: React.FC = () => {
         setIsFeedbackModalOpen(true);
       }
     } catch (err: any) {
-      console.error(err);
+      const isTimeout = err.message?.includes('timed out');
+      const errorContent = isTimeout
+        ? '⏱️ The AI is taking longer than usual. This can happen under load — please try again.'
+        : '⚠️ Something went wrong processing your response. Please try again in a moment.';
+
       const errorMessage: ChatMessage = {
         id: `err-${Date.now()}`,
         role: 'interviewer',
-        content: '⚠️ Engine Error: Failed to process turn. Please check backend server status.',
+        content: errorContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -128,6 +156,7 @@ export const App: React.FC = () => {
 
   const handleResetSession = () => {
     if (selectedCandidate) {
+      activeInitializingCandidateIdRef.current = null;
       handleSelectCandidate(selectedCandidate);
     }
   };
@@ -149,6 +178,7 @@ export const App: React.FC = () => {
         visitedDaysCount={visitedDaysCount}
         difficulty={difficulty}
         currentState={currentState}
+        currentDayTitle={currentDayTitle}
         isComplete={isComplete}
       />
 

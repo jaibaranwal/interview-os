@@ -40,12 +40,23 @@ export interface FeedbackObject {
   strengths: string[];
   gaps: string[];
   next: string[];
+  communicationAssessment?: string;
+  topicsDemonstrated?: string[];
+  topicsSkipped?: string[];
+  hiringRecommendation?: string;
 }
 
 export interface InterviewResponse {
   reply: string;
   done: boolean;
   feedback?: FeedbackObject;
+  // Real-time cockpit data returned from backend
+  questionCount?: number;
+  visitedDaysCount?: number;
+  difficulty?: number;
+  currentState?: string;
+  currentDayTitle?: string;
+  llmCallCount?: number;
 }
 
 export interface ChatMessage {

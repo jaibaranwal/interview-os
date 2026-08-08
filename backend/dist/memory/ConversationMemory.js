@@ -9,13 +9,14 @@ class ConversationMemory {
     strengthsList = new Set();
     weaknessesList = new Set();
     questionCountNum = 0;
-    currentDifficultyScalar = 2.5; // Default mid difficulty
+    currentDifficultyScalar = 2.5;
     topicHistoryList = [];
-    // Enhanced Evaluation & Retry State
+    // Sliding conversation window for LLM context
+    conversationTurns = [];
+    // Evaluation history (single source of truth)
     evaluationsList = [];
     scoresList = [];
     confidenceList = [];
-    retryMap = new Map();
     markDayVisited(day) {
         this.visitedDaysSet.add(day);
         if (!this.topicHistoryList.includes(day)) {
@@ -39,34 +40,45 @@ class ConversationMemory {
             timestamp: new Date()
         });
     }
+    recordConversationTurn(question, answer, dayNum, dayTitle) {
+        this.conversationTurns.push({ question, answer, dayNum, dayTitle });
+    }
+    getRecentContext(n = 3) {
+        const recent = this.conversationTurns.slice(-n);
+        if (recent.length === 0)
+            return '(No prior conversation)';
+        return recent.map((t, i) => {
+            const label = recent.length === 1 ? 'Previous' : `Turn -${recent.length - i}`;
+            return `[${label} | Day ${t.dayNum}: ${t.dayTitle}]\nInterviewer: ${t.question}\nCandidate: ${t.answer}`;
+        }).join('\n\n');
+    }
     recordEvaluation(evalResult, currentDay) {
         this.evaluationsList.push(evalResult);
         this.scoresList.push(evalResult.score);
         this.confidenceList.push(evalResult.confidence);
-        if (evalResult.strengths) {
-            evalResult.strengths.forEach((s) => this.strengthsList.add(s));
+        const isGoodTurn = ['GOOD', 'EXCELLENT'].includes(evalResult.correctness) || evalResult.score >= 60;
+        if (isGoodTurn) {
+            if (evalResult.detected_concepts && evalResult.detected_concepts.length > 0) {
+                evalResult.detected_concepts.forEach((c) => {
+                    if (c && c.length > 2) {
+                        this.strengthsList.add(`Demonstrated understanding of ${c}`);
+                    }
+                });
+            }
+            if (evalResult.strengths && evalResult.strengths.length > 0) {
+                evalResult.strengths.forEach((s) => {
+                    if (s && !s.toLowerCase().includes('no technical strengths')) {
+                        this.strengthsList.add(s);
+                    }
+                });
+            }
         }
-        if (evalResult.weaknesses) {
+        if (evalResult.weaknesses && evalResult.weaknesses.length > 0) {
             evalResult.weaknesses.forEach((w) => this.weaknessesList.add(w));
         }
-        if (evalResult.next_action === 'retry') {
-            this.incrementRetryCount(currentDay);
-        }
-        else if (evalResult.next_action === 'advance') {
-            this.resetRetryCount(currentDay);
-        }
     }
-    getRetryCountForDay(day) {
-        return this.retryMap.get(day) || 0;
-    }
-    incrementRetryCount(day) {
-        const current = this.getRetryCountForDay(day);
-        const updated = current + 1;
-        this.retryMap.set(day, updated);
-        return updated;
-    }
-    resetRetryCount(day) {
-        this.retryMap.set(day, 0);
+    getEvaluations() {
+        return this.evaluationsList;
     }
     getLastEvaluation() {
         return this.evaluationsList.length > 0
@@ -86,12 +98,7 @@ class ConversationMemory {
         return Math.round(sum / this.confidenceList.length);
     }
     recordMistake(day, concept, detail) {
-        this.mistakesList.push({
-            day,
-            concept,
-            detail,
-            timestamp: new Date()
-        });
+        this.mistakesList.push({ day, concept, detail, timestamp: new Date() });
     }
     recordStrength(strength) {
         this.strengthsList.add(strength);
@@ -107,6 +114,9 @@ class ConversationMemory {
     }
     getAskedQuestions() {
         return this.askedQuestionsList;
+    }
+    getAskedQuestionTexts() {
+        return this.askedQuestionsList.map((q) => q.text);
     }
     getCandidateAnswers() {
         return this.candidateAnswersList;
@@ -129,8 +139,21 @@ class ConversationMemory {
     getTopicHistory() {
         return this.topicHistoryList;
     }
-    isQuestionAsked(objective) {
-        return this.askedQuestionsList.some((q) => q.objective.toLowerCase() === objective.toLowerCase());
+    isQuestionAsked(text) {
+        const normalizedNew = text.toLowerCase().trim();
+        return this.askedQuestionsList.some((q) => {
+            const normalizedExisting = q.text.toLowerCase().trim();
+            return normalizedExisting === normalizedNew
+                || (normalizedNew.length > 40 && normalizedExisting.startsWith(normalizedNew.slice(0, 60)));
+        });
+    }
+    getLastCandidateAnswer() {
+        const answers = this.candidateAnswersList;
+        return answers.length > 0 ? answers[answers.length - 1].text : undefined;
+    }
+    getPreviousCandidateAnswer() {
+        const answers = this.candidateAnswersList;
+        return answers.length > 1 ? answers[answers.length - 2].text : undefined;
     }
 }
 exports.ConversationMemory = ConversationMemory;
