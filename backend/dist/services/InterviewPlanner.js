@@ -84,7 +84,7 @@ class InterviewPlanner {
     }
     hasSufficientCoverage(visitedDays, questionCount) {
         const distinctDaysCount = new Set(visitedDays).size;
-        return distinctDaysCount >= 4 && questionCount >= 8;
+        return (distinctDaysCount >= 4 && questionCount >= 6) || questionCount >= 8;
     }
 }
 exports.InterviewPlanner = InterviewPlanner;
