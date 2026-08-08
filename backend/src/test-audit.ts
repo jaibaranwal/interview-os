@@ -1,14 +1,15 @@
 import http from 'http';
+import app from './server';
 import { CandidateLoader } from './data/CandidateLoader';
 
-const PORT = 5001;
+let PORT = 5099;
 
 function post(payload: any): Promise<{ statusCode: number; data: any }> {
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify(payload);
     const req = http.request(
       {
-        hostname: 'localhost',
+        hostname: '127.0.0.1',
         port: PORT,
         path: '/api/interview',
         method: 'POST',
@@ -43,38 +44,53 @@ async function runAudit() {
   console.log('   INTERVIEWOS STATE MACHINE AUDIT VERIFICATION');
   console.log('==================================================\n');
 
-  const candidate = CandidateLoader.getInstance().getCandidateById('CAND-001')!;
+  const server = app.listen(0, async () => {
+    const addr = server.address();
+    if (addr && typeof addr !== 'string') {
+      PORT = addr.port;
+    }
 
-  const testCases = [
-    { label: '1. Spam ("asdfasdf")', message: 'asdfasdf' },
-    { label: '2. Uncertainty ("I don\'t know")', message: "I don't know" },
-    { label: '3. Greeting ("Hello")', message: 'Hello' },
-    { label: '4. Unrelated ("The weather today is very nice.")', message: 'The weather today is very nice.' },
-    { label: '5. Partially Correct ("I used Sentence Transformers for embeddings.")', message: 'I used Sentence Transformers for embeddings.' },
-    { label: '6. Correct Technical ("On Day 7 Embeddings, I used Sentence Transformers to build 384-dimensional dense vectors and evaluated cosine distance using Scikit-learn.")', message: 'On Day 7 Embeddings, I used Sentence Transformers to build 384-dimensional dense vectors and evaluated cosine distance using Scikit-learn.' }
-  ];
+    try {
+      const candidate = CandidateLoader.getInstance().getCandidateById('CAND-001')!;
 
-  for (const tc of testCases) {
-    const sessionId = `audit-test-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const testCases = [
+        { label: '1. Spam ("asdfasdf")', message: 'asdfasdf' },
+        { label: '2. Uncertainty ("I don\'t know")', message: "I don't know" },
+        { label: '3. Greeting ("Hello")', message: 'Hello' },
+        { label: '4. Unrelated ("The weather today is very nice.")', message: 'The weather today is very nice.' },
+        { label: '5. Partially Correct ("I used Sentence Transformers for embeddings.")', message: 'I used Sentence Transformers for embeddings.' },
+        { label: '6. Correct Technical ("On Day 7 Embeddings, I used Sentence Transformers to build 384-dimensional dense vectors and evaluated cosine distance using Scikit-learn.")', message: 'On Day 7 Embeddings, I used Sentence Transformers to build 384-dimensional dense vectors and evaluated cosine distance using Scikit-learn.' }
+      ];
 
-    console.log(`--------------------------------------------------`);
-    console.log(`TEST CASE: ${tc.label}`);
-    console.log(`--------------------------------------------------`);
+      for (const tc of testCases) {
+        const sessionId = `audit-test-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Turn 1 Start
-    await post({ sessionId, candidate });
+        console.log(`--------------------------------------------------`);
+        console.log(`TEST CASE: ${tc.label}`);
+        console.log(`--------------------------------------------------`);
 
-    // Turn 2 Message Test
-    const res = await post({ sessionId, message: tc.message });
+        // Turn 1 Start
+        await post({ sessionId, candidate });
 
-    console.log(`Candidate Input: "${tc.message}"`);
-    console.log(`HTTP Status:     ${res.statusCode}`);
-    console.log(`Interviewer Reply: "${res.data.reply.slice(0, 100)}..."\n`);
-  }
+        // Turn 2 Message Test
+        const res = await post({ sessionId, message: tc.message });
 
-  console.log('==================================================');
-  console.log('🎉 AUDIT VERIFICATION COMPLETE');
-  console.log('==================================================\n');
+        console.log(`Candidate Input: "${tc.message}"`);
+        console.log(`HTTP Status:     ${res.statusCode}`);
+        console.log(`Interviewer Reply: "${(res.data.reply || '').slice(0, 100)}..."\n`);
+      }
+
+      console.log('==================================================');
+      console.log('🎉 AUDIT VERIFICATION COMPLETE');
+      console.log('==================================================\n');
+
+      server.close(() => process.exit(0));
+    } catch (err: any) {
+      console.error("Audit verification error:", err);
+      server.close(() => process.exit(1));
+    }
+  });
 }
 
 runAudit().catch(console.error);
+

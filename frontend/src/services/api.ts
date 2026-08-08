@@ -1,11 +1,11 @@
 import type { CandidateProfile, CurriculumDay, InterviewResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
 export async function fetchCandidates(): Promise<CandidateProfile[]> {
   const res = await fetch(`${API_BASE_URL}/candidates`);
   if (!res.ok) {
-    throw new Error('Failed to load candidate profiles.');
+    throw new Error(`Failed to load candidate profiles (HTTP ${res.status}).`);
   }
   return res.json();
 }
@@ -13,7 +13,7 @@ export async function fetchCandidates(): Promise<CandidateProfile[]> {
 export async function fetchCurriculum(): Promise<CurriculumDay[]> {
   const res = await fetch(`${API_BASE_URL}/curriculum`);
   if (!res.ok) {
-    throw new Error('Failed to load curriculum metadata.');
+    throw new Error(`Failed to load curriculum metadata (HTTP ${res.status}).`);
   }
   return res.json();
 }
@@ -30,7 +30,7 @@ export async function startInterviewSession(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.details || 'Failed to initialize interview session.');
+    throw new Error(errorData.error || errorData.details || 'Failed to initialize interview session.');
   }
 
   return res.json();
@@ -48,8 +48,10 @@ export async function sendInterviewTurn(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.details || 'Failed to submit interview turn.');
+    throw new Error(errorData.error || errorData.details || 'Failed to submit interview turn.');
   }
 
   return res.json();
 }
+
+

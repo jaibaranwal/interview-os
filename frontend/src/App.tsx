@@ -37,10 +37,13 @@ export const App: React.FC = () => {
         }
         setIsBackendConnected(true);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load candidates from backend server:", err);
         setIsBackendConnected(false);
       });
   }, []);
+
+
 
   const handleSelectCandidate = async (candidate: CandidateProfile) => {
     setSelectedCandidate(candidate);

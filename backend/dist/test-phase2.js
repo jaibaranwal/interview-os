@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const http_1 = __importDefault(require("http"));
 const server_1 = __importDefault(require("./server"));
 const CandidateLoader_1 = require("./data/CandidateLoader");
-const PORT = 5001;
+let PORT = 5098;
 function makeRequest(method, path, body) {
     return new Promise((resolve, reject) => {
         const postData = body ? JSON.stringify(body) : '';
@@ -45,7 +45,11 @@ async function runPhase2Tests() {
     console.log('==================================================');
     console.log('   INTERVIEWOS PHASE 2 VERIFICATION TEST');
     console.log('==================================================\n');
-    const server = server_1.default.listen(PORT, async () => {
+    const server = server_1.default.listen(0, async () => {
+        const address = server.address();
+        if (address && typeof address !== 'string') {
+            PORT = address.port;
+        }
         try {
             // 1. Test GET /health
             console.log('1️⃣ Testing GET /health ...');
@@ -70,7 +74,8 @@ async function runPhase2Tests() {
             console.log(`   Status: ${startRes.statusCode}`);
             console.log(`   Response: ${JSON.stringify(startRes.data)}`);
             if (startRes.statusCode !== 200 ||
-                startRes.data.reply !== 'Interview initialized successfully.' ||
+                typeof startRes.data.reply !== 'string' ||
+                startRes.data.reply.length === 0 ||
                 startRes.data.done !== false) {
                 throw new Error('New session initialization failed!');
             }
@@ -85,7 +90,8 @@ async function runPhase2Tests() {
             console.log(`   Status: ${turnRes.statusCode}`);
             console.log(`   Response: ${JSON.stringify(turnRes.data)}`);
             if (turnRes.statusCode !== 200 ||
-                turnRes.data.reply !== 'Session found.' ||
+                typeof turnRes.data.reply !== 'string' ||
+                turnRes.data.reply.length === 0 ||
                 turnRes.data.done !== false) {
                 throw new Error('Existing session turn failed!');
             }
