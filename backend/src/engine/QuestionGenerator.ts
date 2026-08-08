@@ -125,6 +125,11 @@ RULE 4 — PROFESSIONAL TONALITY:
   - Stay calm, neutral, and professional. Never scold, lecture, teach, or echo profanity.
   - Keep response to 2-3 concise sentences maximum.
 
+RULE 5 — PROGRESSIVE PROBING & NATURAL FLOW:
+  ${hasMeaningfulContent && currentState === 'FOLLOW_UP'
+    ? 'The candidate gave a GOOD technical response. Apply PROGRESSIVE PROBING: stay on the same concept (' + dayTitle + ') to probe implementation details, validation, error handling, or trade-offs (basic -> implementation -> trade-offs). Do NOT jump to an unrelated topic yet.'
+    : 'Maintain natural progression without sudden jumps between unrelated concepts.'}
+
 Output ONLY the interviewer's spoken question.`;
 
     try {

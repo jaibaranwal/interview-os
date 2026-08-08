@@ -38,61 +38,77 @@ export class FeedbackEngine implements IFeedbackEngine {
       return dayData ? `Day ${d}: ${dayData.title}` : `Day ${d}`;
     });
 
-    // ── Prompt 27 Issue 1: Credit ALL Good / Successful Answers ──
     const goodEvaluations = evaluations.filter(
       (e) => e.score >= 60 || ['GOOD', 'EXCELLENT'].includes(e.correctness)
     );
 
-    const verifiedStrengths: string[] = [];
-
-    // Extract all demonstrated concepts and strengths from good evaluations
+    // ── Prompt 29 Issue 1: Competency Grouping (Max 3 Strengths) ──
+    const demonstratedConcepts = new Set<string>();
     goodEvaluations.forEach((evalResult) => {
-      if (evalResult.detected_concepts && evalResult.detected_concepts.length > 0) {
-        evalResult.detected_concepts.forEach((concept) => {
-          if (concept && concept.length > 2) {
-            verifiedStrengths.push(`Demonstrated understanding of ${concept}.`);
-          }
-        });
-      }
-      if (evalResult.strengths && evalResult.strengths.length > 0) {
-        evalResult.strengths.forEach((s) => {
-          if (s && !s.toLowerCase().includes('no technical strengths')) {
-            verifiedStrengths.push(s.endsWith('.') ? s : `${s}.`);
-          }
+      if (evalResult.detected_concepts) {
+        evalResult.detected_concepts.forEach((c) => {
+          if (c && c.length > 2) demonstratedConcepts.add(c.toLowerCase());
         });
       }
     });
 
-    // Merge with memory strengths
-    const memoryStrengths = memory.getStrengths();
-    memoryStrengths.forEach((s) => {
-      if (s && !s.toLowerCase().includes('no technical strengths')) {
-        verifiedStrengths.push(s.endsWith('.') ? s : `${s}.`);
-      }
-    });
+    const groupedStrengths: string[] = [];
+    const conceptsArr = Array.from(demonstratedConcepts);
 
-    const uniqueStrengths = Array.from(new Set(verifiedStrengths));
-
-    const finalStrengths: string[] = [];
-    if (uniqueStrengths.length > 0) {
-      finalStrengths.push(...uniqueStrengths.slice(0, 4));
-    } else {
-      finalStrengths.push("No technical strengths demonstrated.");
+    const hasVectorConcepts = conceptsArr.some((c) =>
+      c.includes('vector') || c.includes('embedding') || c.includes('chroma') || c.includes('faiss') || c.includes('sentence transformer')
+    );
+    if (hasVectorConcepts) {
+      groupedStrengths.push('Demonstrated practical awareness of vector embeddings, similarity search, and retrieval-augmented generation.');
     }
 
-    // ── Knowledge Gaps ──
-    const gaps: string[] = [];
-    const memoryWeaknesses = memory.getWeaknesses();
-    if (memoryWeaknesses.length > 0) {
-      gaps.push(...memoryWeaknesses.slice(0, 4));
-    } else {
+    const hasApiConcepts = conceptsArr.some((c) =>
+      c.includes('api') || c.includes('fastapi') || c.includes('endpoint') || c.includes('server') || c.includes('http')
+    );
+    if (hasApiConcepts) {
+      groupedStrengths.push('Demonstrated understanding of building backend AI application services and API design.');
+    }
+
+    const hasEnvConcepts = conceptsArr.some((c) =>
+      c.includes('python') || c.includes('vs code') || c.includes('virtual environment') || c.includes('pylance') || c.includes('sqlite')
+    );
+    if (hasEnvConcepts) {
+      groupedStrengths.push('Showed foundational proficiency in Python environment configuration and data management tooling.');
+    }
+
+    // Add generic grouped strength if good evaluations exist but fell outside categories
+    if (goodEvaluations.length > 0 && groupedStrengths.length === 0) {
+      const dayNames = visitedDayTitles.slice(0, 2).join(' and ');
+      groupedStrengths.push(`Demonstrated solid technical understanding of core concepts in ${dayNames}.`);
+    }
+
+    const finalStrengths = groupedStrengths.length > 0
+      ? groupedStrengths.slice(0, 3) // Prompt 29 Rule: MAXIMUM 3 STRENGTHS
+      : ['No technical strengths demonstrated.'];
+
+    // ── Prompt 29: Deduplicated Knowledge Gaps (Max 6 Bullets) ──
+    const rawWeaknesses = memory.getWeaknesses();
+    const uniqueWeaknesses: string[] = [];
+    rawWeaknesses.forEach((w) => {
+      const trimmed = w.trim();
+      const isDuplicate = uniqueWeaknesses.some(
+        (existing) => existing.toLowerCase().includes(trimmed.toLowerCase()) || trimmed.toLowerCase().includes(existing.toLowerCase())
+      );
+      if (!isDuplicate && !trimmed.toLowerCase().includes('no technical strengths')) {
+        uniqueWeaknesses.push(trimmed.endsWith('.') ? trimmed : `${trimmed}.`);
+      }
+    });
+
+    if (uniqueWeaknesses.length === 0) {
       const skippedMissions = candidate.missions.filter((m) => m.skipped);
       if (skippedMissions.length > 0) {
-        gaps.push(`Limited coverage of Day ${skippedMissions[0].day}: ${skippedMissions[0].title}.`);
+        uniqueWeaknesses.push(`Limited coverage of Day ${skippedMissions[0].day}: ${skippedMissions[0].title}.`);
       } else {
-        gaps.push('Opportunities to deepen architectural trade-off analysis in large-scale AI deployments.');
+        uniqueWeaknesses.push('Opportunities to deepen architectural trade-off analysis in large-scale AI deployments.');
       }
     }
+
+    const finalGaps = uniqueWeaknesses.slice(0, 6); // Prompt 29 Rule: MAXIMUM 6 BULLETS
 
     // ── Study Plan ──
     const next: string[] = [];
@@ -106,20 +122,30 @@ export class FeedbackEngine implements IFeedbackEngine {
       next.push('Implement end-to-end evaluation metrics and observability using structured logging.');
     }
 
-    // ── Hiring Recommendation & Communication Assessment ──
+    // ── Prompt 29 Rule: Balanced Executive Summary reflecting overall performance ──
+    const totalTurns = evaluations.length || 1;
+    const goodTurns = goodEvaluations.length;
+    const successRatio = goodTurns / totalTurns;
     const avgScore = memory.getAverageScore();
+
     let hiringRecommendation: string;
-    if (avgScore >= 80) {
+    let performanceTone: string;
+
+    if (successRatio >= 0.70 && avgScore >= 75) {
       hiringRecommendation = 'Strong Hire';
-    } else if (avgScore >= 60) {
+      performanceTone = 'demonstrated strong, consistent technical performance across evaluated curriculum topics';
+    } else if (successRatio >= 0.50 && avgScore >= 60) {
       hiringRecommendation = 'Hire';
-    } else if (goodEvaluations.length > 0) {
+      performanceTone = 'demonstrated solid technical understanding in key areas with minor implementation gaps';
+    } else if (goodTurns > 0) {
       hiringRecommendation = 'Weak Pass';
+      performanceTone = `demonstrated foundational awareness in isolated areas (answering ${goodTurns} of ${totalTurns} questions correctly), but struggled across core technical evaluation criteria`;
     } else {
       hiringRecommendation = 'Do Not Hire';
+      performanceTone = 'struggled across all technical evaluation criteria and demonstrated no verified technical strengths';
     }
 
-    const communicationAssessment = uniqueStrengths.length > 0
+    const communicationAssessment = goodTurns > 0
       ? 'Candidate communicated technical concepts clearly when providing responses.'
       : 'Candidate struggled to articulate technical details and implementation specifics.';
 
@@ -131,15 +157,12 @@ export class FeedbackEngine implements IFeedbackEngine {
       return dayData ? `Day ${d}: ${dayData.title}` : `Day ${d}`;
     });
 
-    const hasGoodAnswers = uniqueStrengths.length > 0;
-    const summary = hasGoodAnswers
-      ? `${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp) completed a technical interview covering ${visitedDays.length} curriculum topic${visitedDays.length !== 1 ? 's' : ''}. Demonstrated verified technical understanding in key areas. Recommendation: ${hiringRecommendation}.`
-      : `${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp) completed a technical interview covering ${visitedDays.length} curriculum topic${visitedDays.length !== 1 ? 's' : ''}. No verified technical strengths were demonstrated during the session. Recommendation: ${hiringRecommendation}.`;
+    const summary = `${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp) completed an interview covering ${visitedDays.length} topic${visitedDays.length !== 1 ? 's' : ''}. Candidate ${performanceTone}. Hiring Recommendation: ${hiringRecommendation}.`;
 
     const deterministicFeedback: FeedbackObject = {
       summary,
       strengths: finalStrengths,
-      gaps: Array.from(new Set(gaps)).slice(0, 4),
+      gaps: finalGaps,
       next: Array.from(new Set(next)).slice(0, 4),
       communicationAssessment,
       topicsDemonstrated,
@@ -161,23 +184,25 @@ export class FeedbackEngine implements IFeedbackEngine {
       const prompt = `You are a Senior Technical Hiring Panel generating a final candidate evaluation report.
 
 Candidate: ${member.name} (${member.jobRole}, ${member.yearsExperience} yrs exp)
+Total Questions Attempted: ${totalTurns}
+Successful Answers (Score >= 60): ${goodTurns} (${Math.round(successRatio * 100)}%)
 Topics Evaluated: ${visitedDayTitles.join(', ')}
-Questions Asked: ${askedQuestions.length}
-Verified Demonstrated Strengths: ${hasGoodAnswers ? uniqueStrengths.join('; ') : 'NONE (Candidate provided no verified technical evidence)'}
-Documented Learning Gaps: ${memoryWeaknesses.length > 0 ? memoryWeaknesses.join('; ') : 'General implementation gaps'}
+Demonstrated Concepts: ${conceptsArr.length > 0 ? conceptsArr.join(', ') : 'NONE'}
+Documented Learning Gaps: ${uniqueWeaknesses.length > 0 ? uniqueWeaknesses.join('; ') : 'General implementation gaps'}
 Candidate Answers: ${sanitizedAnswers.map((a, i) => `[${i + 1}] ${a}`).join(' | ')}
 
-MANDATORY RULES:
-1. EVIDENCE-DRIVEN STRENGTHS: If verified demonstrated strengths exist above, you MUST credit them in "strengths". Only if NO verified strengths exist output "strengths": ["No technical strengths demonstrated."].
-2. Never invent strengths that were not demonstrated by candidate.
+MANDATORY RULES — PROMPT 29 REPORT ACCURACY POLISH:
+1. STRENGTHS (MAXIMUM 3 BULLETS): Group related concepts into broad competency-based bullet points (e.g. "Demonstrated understanding of building AI applications with FastAPI"). Do NOT list individual technology keywords. Max 3 bullets total.
+2. LEARNING GAPS (MAXIMUM 6 BULLETS): Deduplicate and merge similar weaknesses. Max 6 bullets total.
+3. BALANCED EXECUTIVE SUMMARY: If candidate answered <= 35% of questions correctly (e.g., 2/8 questions), the summary MUST be balanced/below-average reflecting their overall performance (do NOT sound overly positive!).
 
 Generate a raw valid JSON hiring panel report:
 {
-  "summary": "<2-sentence executive summary with recommendation>",
-  "strengths": ["<strength 1>"],
-  "gaps": ["<gap 1>", "<gap 2>"],
+  "summary": "${summary}",
+  "strengths": ["<competency strength 1>", "<competency strength 2>"],
+  "gaps": ["<deduplicated gap 1>", "<deduplicated gap 2>"],
   "next": ["<recommendation 1>", "<recommendation 2>"],
-  "communicationAssessment": "<1 sentence communication assessment>",
+  "communicationAssessment": "${communicationAssessment}",
   "topicsDemonstrated": [${visitedDayTitles.map((t) => `"${t}"`).join(', ')}],
   "topicsSkipped": [${topicsSkipped.map((t) => `"${t}"`).join(', ')}],
   "hiringRecommendation": "${hiringRecommendation}"
@@ -193,14 +218,14 @@ Output ONLY raw valid JSON.`;
           parsed.summary &&
           Array.isArray(parsed.strengths) &&
           Array.isArray(parsed.gaps) &&
-          Array.isArray(parsed.next) &&
-          parsed.strengths.length > 0
+          Array.isArray(parsed.next)
         ) {
-          if (!hasGoodAnswers) {
+          // Enforce Prompt 29 constraints on LLM output
+          parsed.strengths = (parsed.strengths || []).slice(0, 3);
+          if (goodTurns === 0) {
             parsed.strengths = ["No technical strengths demonstrated."];
-          } else if (parsed.strengths.includes("No technical strengths demonstrated.")) {
-            parsed.strengths = finalStrengths;
           }
+          parsed.gaps = (parsed.gaps || []).slice(0, 6);
           parsed.hiringRecommendation = parsed.hiringRecommendation || hiringRecommendation;
           Logger.info(`Generated LLM-enhanced hiring panel report for session.`);
           return parsed;

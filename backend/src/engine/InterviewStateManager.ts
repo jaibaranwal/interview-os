@@ -181,8 +181,26 @@ export class InterviewStateManager {
 
     // ── ADVANCE path (good / excellent) ──
     this.retryMap.set(day, 0);
-    this.followUpMap.set(day, 0);
     this.consecutiveInvalidCount = 0;
+
+    // Prompt 29 Issue 2: Progressive Probing — stay within concept for 1 follow-up turn before advancing topic
+    if (currentFollowUp === 0) {
+      const newFollowUp = 1;
+      this.followUpMap.set(day, newFollowUp);
+      this.safeTransition(InterviewState.FOLLOW_UP);
+      return {
+        nextState: InterviewState.FOLLOW_UP,
+        effectiveAction: 'follow_up',
+        shouldAdvanceTopic: false,
+        retryCount: 0,
+        followUpCount: newFollowUp,
+        consecutiveInvalidCount: 0,
+        reason: `Score ${evaluation.score}/100 (${evaluation.correctness}). Probing implementation/trade-offs before topic advance.`
+      };
+    }
+
+    // Concept probed sufficiently — advance to next topic
+    this.followUpMap.set(day, 0);
     this.safeTransition(InterviewState.TOPIC_SWITCH);
     return {
       nextState: InterviewState.TOPIC_SWITCH,
@@ -191,7 +209,7 @@ export class InterviewStateManager {
       retryCount: 0,
       followUpCount: 0,
       consecutiveInvalidCount: 0,
-      reason: `Score ${evaluation.score}/100 (${evaluation.correctness}). Threshold passed — advancing topic.`
+      reason: `Score ${evaluation.score}/100 (${evaluation.correctness}). Probed sufficiently — advancing topic.`
     };
   }
 
