@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, ArrowRight, ShieldCheck, Brain, Users, BookOpen, MessageSquare, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ArchitectureSection } from './ArchitectureSection';
 
 interface LandingPageProps {
   onStartInterview: () => void;
@@ -27,7 +28,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           {/* Hackathon Badge */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '30px', background: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)', marginBottom: '24px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 18px', borderRadius: '30px', background: 'rgba(0, 229, 255, 0.12)', border: '1px solid rgba(0, 229, 255, 0.35)', marginBottom: '24px', boxShadow: '0 0 20px rgba(0, 229, 255, 0.2)' }}>
             <Sparkles size={14} color="#00E5FF" />
             <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#00E5FF', letterSpacing: '0.05em' }}>
               ADAPTIVE AI TECHNICAL INTERVIEW PLATFORM
@@ -35,7 +36,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Hero Main Heading */}
-          <h1 style={{ fontSize: 'clamp(2.4rem, 5vw, 4.2rem)', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: '1.1', color: '#FFFFFF', marginBottom: '20px' }}>
+          <h1 style={{ fontSize: 'clamp(2.4rem, 5vw, 4.4rem)', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: '1.1', color: '#FFFFFF', marginBottom: '20px' }}>
             Next-Gen AI Technical Interviewer <br />
             <span className="gradient-text">Engineered for Real Engineering Roles</span>
           </h1>
@@ -76,8 +77,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               style={{
                 padding: '14px 28px',
                 borderRadius: '16px',
-                background: 'rgba(16, 23, 40, 0.8)',
-                border: '1px solid rgba(79, 140, 255, 0.3)',
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(79, 140, 255, 0.35)',
                 color: '#FFFFFF',
                 fontSize: '1rem',
                 fontWeight: 700,
@@ -99,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 padding: '14px 24px',
                 borderRadius: '16px',
                 background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
                 color: '#94A3B8',
                 fontSize: '0.95rem',
                 fontWeight: 600,
@@ -114,7 +115,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 2. Animated Interview Journey Timeline Widget */}
       <section style={{ margin: '0 auto 60px auto', padding: '0 20px' }}>
-        <div className="glass-card" style={{ padding: '24px 32px', background: 'rgba(16, 23, 40, 0.7)', border: '1px solid rgba(79, 140, 255, 0.2)' }}>
+        <div className="glass-card" style={{ padding: '24px 32px', background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(79, 140, 255, 0.25)' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#00E5FF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               INTERVIEW OS ADAPTIVE PIPELINE JOURNEY
@@ -133,7 +134,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 key={idx}
                 whileHover={{ translateY: -4 }}
                 style={{
-                  background: 'rgba(5, 8, 22, 0.7)',
+                  background: 'rgba(3, 7, 18, 0.75)',
                   border: `1px solid ${item.color}35`,
                   borderRadius: '14px',
                   padding: '16px',
@@ -155,9 +156,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 3. PROMPT 35 REFINEMENT: Interview Intelligence Flow Section */}
+      {/* 3. Interview Intelligence Flow Section */}
       <section id="intelligence-flow-section" style={{ margin: '0 auto 60px auto', padding: '0 20px' }}>
-        <div className="glass-card" style={{ padding: '40px 36px', background: 'rgba(16, 23, 40, 0.85)', border: '1px solid rgba(0, 229, 255, 0.25)' }}>
+        <div className="glass-card" style={{ padding: '40px 36px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(0, 229, 255, 0.25)' }}>
           <div style={{ textAlign: 'center', marginBottom: '36px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#00E5FF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               REASONING ENGINE ARCHITECTURE
@@ -188,7 +189,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 whileHover={{ scale: 1.03, translateY: -4 }}
                 transition={{ duration: 0.2 }}
                 style={{
-                  background: 'rgba(5, 8, 22, 0.8)',
+                  background: 'rgba(3, 7, 18, 0.8)',
                   border: `1px solid ${flowNode.color}35`,
                   borderRadius: '16px',
                   padding: '20px 18px',
@@ -211,8 +212,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 4. PROMPT 35 REQUIREMENT: 5 Premium Capability Cards */}
-      <section style={{ margin: '0 auto', padding: '0 20px' }}>
+      {/* 4. 5 Premium Capability Cards */}
+      <section style={{ margin: '0 auto 60px auto', padding: '0 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
             Core AI Intelligence Capabilities
@@ -263,7 +264,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="glass-card"
                 style={{
                   padding: '24px',
-                  background: 'rgba(16, 23, 40, 0.75)',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   border: `1px solid ${cap.color}30`
                 }}
               >
@@ -292,6 +293,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           })}
         </div>
       </section>
+
+      {/* 5. Technical Component Architecture Pipeline */}
+      <ArchitectureSection />
 
     </div>
   );

@@ -28,6 +28,12 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
     c.member.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`;
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <AnimatePresence>
       <div style={{
@@ -36,8 +42,8 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(5, 8, 22, 0.88)',
-        backdropFilter: 'blur(16px)',
+        backgroundColor: 'rgba(3, 7, 18, 0.92)',
+        backdropFilter: 'blur(20px)',
         zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
@@ -52,32 +58,32 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
           className="glass-card"
           style={{
             width: '100%',
-            maxWidth: '960px',
-            maxHeight: '85vh',
+            maxWidth: '980px',
+            maxHeight: '88vh',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            border: '1px solid rgba(0, 229, 255, 0.3)',
-            boxShadow: '0 0 50px rgba(0, 229, 255, 0.15)'
+            border: '1px solid rgba(0, 229, 255, 0.35)',
+            boxShadow: '0 0 70px rgba(0, 229, 255, 0.15)'
           }}
         >
           {/* Header */}
           <div style={{
-            padding: '20px 28px',
+            padding: '22px 28px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(16, 23, 40, 0.6)'
+            background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.08), rgba(79, 140, 255, 0.08))'
           }}>
             <div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 Candidate Cohort Selector
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(79, 140, 255, 0.15)', color: '#4F8CFF', border: '1px solid rgba(79, 140, 255, 0.3)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '3px 12px', borderRadius: '20px', background: 'rgba(79, 140, 255, 0.18)', color: '#4F8CFF', border: '1px solid rgba(79, 140, 255, 0.35)' }}>
                   {candidates.length} Cohort Members
                 </span>
               </h2>
-              <p style={{ fontSize: '0.82rem', color: '#94A3B8', marginTop: '2px' }}>
+              <p style={{ fontSize: '0.84rem', color: '#94A3B8', marginTop: '3px' }}>
                 Select a candidate profile to test the adaptive InterviewOS intelligence engine.
               </p>
             </div>
@@ -102,9 +108,9 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
           </div>
 
           {/* Search Bar */}
-          <div style={{ padding: '16px 28px', background: 'rgba(15, 23, 42, 0.4)' }}>
+          <div style={{ padding: '16px 28px', background: 'rgba(15, 23, 42, 0.5)' }}>
             <div style={{ position: 'relative' }}>
-              <Search size={18} color="#64748B" style={{ position: 'absolute', left: '16px', top: '13px' }} />
+              <Search size={18} color="#64748B" style={{ position: 'absolute', left: '16px', top: '14px' }} />
               <input
                 type="text"
                 placeholder="Search candidate by name, job role (e.g. AI Engineer, Data Scientist)..."
@@ -113,9 +119,9 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px 16px 12px 46px',
-                  borderRadius: '12px',
-                  background: 'rgba(16, 23, 40, 0.8)',
-                  border: '1px solid rgba(79, 140, 255, 0.25)',
+                  borderRadius: '14px',
+                  background: 'rgba(3, 7, 18, 0.85)',
+                  border: '1px solid rgba(79, 140, 255, 0.3)',
                   color: '#FFFFFF',
                   fontSize: '0.9rem'
                 }}
@@ -134,6 +140,7 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
             {filteredCandidates.map((c) => {
               const isSelected = c.member.id === selectedCandidateId;
               const completedCount = c.missions.filter((m) => m.passed).length;
+              const initials = getInitials(c.member.name);
 
               return (
                 <motion.div
@@ -147,7 +154,7 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                   style={{
                     background: isSelected
                       ? 'linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(79, 140, 255, 0.15))'
-                      : 'rgba(16, 23, 40, 0.7)',
+                      : 'rgba(15, 23, 42, 0.75)',
                     border: isSelected
                       ? '2px solid #00E5FF'
                       : '1px solid rgba(255, 255, 255, 0.08)',
@@ -155,7 +162,7 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                     padding: '18px',
                     cursor: 'pointer',
                     position: 'relative',
-                    boxShadow: isSelected ? '0 0 24px rgba(0, 229, 255, 0.2)' : 'none',
+                    boxShadow: isSelected ? '0 0 24px rgba(0, 229, 255, 0.25)' : 'none',
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -165,23 +172,47 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                       top: '14px',
                       right: '14px',
                       background: '#00E5FF',
-                      color: '#050816',
+                      color: '#030712',
                       borderRadius: '50%',
                       width: '24px',
                       height: '24px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      boxShadow: '0 0 10px #00E5FF'
                     }}>
-                      <UserCheck size={16} />
+                      <UserCheck size={15} />
                     </div>
                   )}
 
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>
-                    {c.member.name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: isSelected ? 'linear-gradient(135deg, #00E5FF, #4F8CFF)' : 'rgba(79, 140, 255, 0.18)',
+                      border: '1px solid rgba(0, 229, 255, 0.3)',
+                      color: isSelected ? '#FFFFFF' : '#7DD3FC',
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {initials}
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
+                        {c.member.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                        ID: {c.member.id}
+                      </div>
+                    </div>
                   </div>
 
-                  <div style={{ fontSize: '0.82rem', color: '#7DD3FC', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '0.82rem', color: '#7DD3FC', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                     <Briefcase size={14} /> {c.member.jobRole} ({c.member.yearsExperience} yrs exp)
                   </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, CornerDownLeft } from 'lucide-react';
+import { Send, Bot, User, Sparkles, CornerDownLeft, Code } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage } from '../types';
 
@@ -61,16 +61,37 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`;
   };
 
+  const renderMessageContent = (content: string) => {
+    if (content.includes('```')) {
+      const parts = content.split(/(```[\s\S]*?```)/g);
+      return parts.map((part, index) => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          const codeText = part.slice(3, -3).replace(/^[a-zA-Z]+\n/, '');
+          return (
+            <div key={index} className="code-block-container">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#00E5FF', marginBottom: '6px', fontWeight: 700 }}>
+                <Code size={13} /> Code Block
+              </div>
+              <pre style={{ margin: 0, overflowX: 'auto' }}><code>{codeText.trim()}</code></pre>
+            </div>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      });
+    }
+    return content;
+  };
+
   return (
-    <div style={{ width: '100%', maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 230px)', minHeight: '520px' }}>
+    <div style={{ width: '100%', maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 230px)', minHeight: '540px' }}>
       <div className="glass-card" style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         position: 'relative',
-        background: 'rgba(10, 15, 30, 0.75)',
-        border: '1px solid rgba(79, 140, 255, 0.15)'
+        background: 'rgba(15, 23, 42, 0.8)',
+        border: '1px solid rgba(79, 140, 255, 0.2)'
       }}>
 
         {/* Scrollable Message Container */}
@@ -114,7 +135,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   {/* Message Card */}
                   <div style={{
                     background: isBot
-                      ? 'rgba(16, 23, 42, 0.85)'
+                      ? 'rgba(15, 23, 42, 0.9)'
                       : 'linear-gradient(135deg, rgba(79, 140, 255, 0.2), rgba(0, 229, 255, 0.12))',
                     border: isBot
                       ? '1px solid rgba(255, 255, 255, 0.1)'
@@ -156,7 +177,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </div>
 
                     <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: isBot ? '#F8FAFC' : '#FFFFFF' }}>
-                      {msg.content}
+                      {renderMessageContent(msg.content)}
                     </div>
                   </div>
 
@@ -203,7 +224,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
 
               <div style={{
-                background: 'rgba(16, 23, 42, 0.85)',
+                background: 'rgba(15, 23, 42, 0.9)',
                 border: '1px solid rgba(0, 229, 255, 0.3)',
                 borderLeft: '3px solid #00E5FF',
                 borderRadius: '4px 20px 20px 20px',
@@ -213,7 +234,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 gap: '8px'
               }}>
                 <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#00E5FF' }}>
-                  InterviewOS AI is evaluating & generating response
+                  InterviewOS AI is evaluating candidate response & reasoning...
                 </span>
                 <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
                   {[0, 1, 2].map((i) => (
@@ -238,14 +259,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
 
         {/* Modern Floating Composer (Input Area) */}
-        <div style={{ padding: '16px 24px', background: 'rgba(5, 8, 22, 0.85)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div style={{ padding: '16px 24px', background: 'rgba(3, 7, 18, 0.9)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <form onSubmit={handleSubmit} style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
             <div style={{
               flex: 1,
               position: 'relative',
               borderRadius: '20px',
-              background: 'rgba(16, 23, 40, 0.9)',
-              border: '1px solid rgba(79, 140, 255, 0.3)',
+              background: 'rgba(15, 23, 42, 0.95)',
+              border: '1px solid rgba(79, 140, 255, 0.35)',
               boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
               transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
             }}>
