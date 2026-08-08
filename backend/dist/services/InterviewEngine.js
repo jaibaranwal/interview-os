@@ -186,6 +186,25 @@ class InterviewEngine {
             retryCount: retryCountForPrompt
         });
         const llmReply = await this.llmClient.generate(systemPrompt, incomingMessage || '');
+        // Log explicit LLM-Driven Audit Trace
+        console.log('==============================');
+        console.log(`CURRENT DAY: ${topicBefore}`);
+        console.log(`CURRENT STATE: ${currentState}`);
+        console.log(`USER ANSWER: "${incomingMessage || '(Initial Turn / Greeting)'}"`);
+        console.log(`LLM RAW RESPONSE: ${evaluation?.raw_reasoning || '(Greeting Generation)'}`);
+        console.log('PARSED JSON:', evaluation ? JSON.stringify({
+            score: evaluation.score,
+            confidence: evaluation.confidence,
+            correctness: evaluation.correctness,
+            detected_concepts: evaluation.detected_concepts,
+            missing_concepts: evaluation.missing_concepts,
+            strengths: evaluation.strengths,
+            weaknesses: evaluation.weaknesses,
+            next_action: evaluation.next_action
+        }, null, 2) : 'N/A (Greeting)');
+        console.log(`NEXT ACTION: ${evaluation?.next_action || 'N/A'}`);
+        console.log(`GENERATED QUESTION: "${llmReply}"`);
+        console.log('==============================\n');
         // 6. Record Question in Memory
         if (currentDay && currentState !== StateMachine_1.InterviewState.GREETING) {
             memory.recordQuestion(currentDay.day, currentDay.objectives[0] || currentDay.title, llmReply);

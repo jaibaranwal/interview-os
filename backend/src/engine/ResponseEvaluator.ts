@@ -79,7 +79,8 @@ Output ONLY valid JSON with no extra text or markdown formatting.`;
           return {
             ...parsed,
             score: Math.min(100, Math.max(0, parsed.score)),
-            confidence: Math.min(100, Math.max(0, parsed.confidence || 85))
+            confidence: Math.min(100, Math.max(0, parsed.confidence || 85)),
+            raw_reasoning: jsonMatch[0]
           };
         }
       }
