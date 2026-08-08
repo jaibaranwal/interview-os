@@ -1,6 +1,6 @@
 import type { CandidateProfile, CurriculumDay, InterviewResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 const REQUEST_TIMEOUT_MS = 90_000; // 90s — LLM can be slow under rate limits
 
 /**
