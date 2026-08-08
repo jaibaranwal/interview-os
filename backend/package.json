@@ -9,7 +9,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test:phase1": "ts-node src/test-phase1.ts",
     "test:phase2": "ts-node src/test-phase2.ts",
-    "test:brain": "ts-node src/test-brain.ts"
+    "test:brain": "ts-node src/test-brain.ts",
+    "test:orchestrator": "ts-node src/test-orchestrator.ts",
+    "test:e2e": "ts-node src/test-e2e.ts"
   },
   "keywords": [],
   "author": "",

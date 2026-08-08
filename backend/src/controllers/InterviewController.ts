@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
-import { SessionManager } from '../services/SessionManager';
+import { InterviewEngine } from '../services/InterviewEngine';
 import { interviewRequestSchema } from '../validators/interview.validator';
 import { Logger } from '../utils/logger';
 
 export class InterviewController {
-  private sessionManager: SessionManager;
+  private interviewEngine: InterviewEngine;
 
-  constructor(sessionManager: SessionManager = SessionManager.getInstance()) {
-    this.sessionManager = sessionManager;
+  constructor(interviewEngine: InterviewEngine = new InterviewEngine()) {
+    this.interviewEngine = interviewEngine;
   }
 
   public handleInterview = async (req: Request, res: Response): Promise<void> => {
@@ -22,45 +22,16 @@ export class InterviewController {
       return;
     }
 
-    const { sessionId, candidate, message } = parseResult.data;
-
-    // 2. Check session existence
-    if (!this.sessionManager.hasSession(sessionId)) {
-      // New Session Initialization
-      if (!candidate) {
-        res.status(400).json({
-          error: 'Bad Request',
-          details: "New session initialization requires a valid 'candidate' profile object."
-        });
-        return;
-      }
-
-      // Create session
-      const session = this.sessionManager.createSession(sessionId, candidate);
-      Logger.info(`Initialized new session '${sessionId}' for candidate '${candidate.member.name}' (${candidate.member.id}).`);
-
-      res.status(200).json({
-        reply: 'Interview initialized successfully.',
-        done: false
+    try {
+      // 2. Delegate to InterviewEngine orchestrator
+      const response = await this.interviewEngine.processTurn(parseResult.data as any);
+      res.status(200).json(response);
+    } catch (err: any) {
+      Logger.error(`InterviewController error on session '${req.body?.sessionId}':`, err.message);
+      res.status(400).json({
+        error: 'Bad Request',
+        details: err.message
       });
-      return;
     }
-
-    // Existing Session Turn
-    const existingSession = this.sessionManager.getSession(sessionId)!;
-
-    if (message) {
-      const updatedMessages = [
-        ...existingSession.messages,
-        { role: 'candidate' as const, content: message, timestamp: new Date() }
-      ];
-      this.sessionManager.updateSession(sessionId, { messages: updatedMessages });
-      Logger.info(`Updated session '${sessionId}' with candidate message (${message.length} chars).`);
-    }
-
-    res.status(200).json({
-      reply: 'Session found.',
-      done: false
-    });
   };
 }
