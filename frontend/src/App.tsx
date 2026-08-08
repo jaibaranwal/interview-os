@@ -34,7 +34,6 @@ export const App: React.FC = () => {
   const activeInitializingCandidateIdRef = useRef<string | null>(null);
 
   const handleSelectCandidate = useCallback(async (candidate: CandidateProfile) => {
-    // Guard against duplicate concurrent initialization for the same candidate
     if (activeInitializingCandidateIdRef.current === candidate.member.id) {
       return;
     }
@@ -162,7 +161,13 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '0 16px 24px 16px' }}>
+    <div style={{ minHeight: '100vh', padding: '16px 20px 24px 20px', position: 'relative' }}>
+      {/* Animated Low-Opacity Background Mesh */}
+      <div className="bg-mesh-container">
+        <div className="bg-mesh-orb-1" />
+        <div className="bg-mesh-orb-2" />
+      </div>
+
       {/* Header Bar */}
       <Header
         selectedCandidate={selectedCandidate}
