@@ -133,9 +133,16 @@ class InterviewEngine {
         const currentState = stateManager.getState();
         const currentRetryCount = stateManager.getRetryCount(currentDay.day);
         const currentFollowUpCount = stateManager.getFollowUpCount(currentDay.day);
-        // ─── 3. Check Interview Completion Criteria (Prompt 38 Dynamic Adaptive Length) ───────────
-        const isCoverageMet = this.curriculumNavigator.isCoverageComplete(memory.getVisitedDays(), memory.getQuestionCount(), memory.getEvaluations());
-        if (isCoverageMet || evaluation?.next_action === 'terminate') {
+        // ─── 3. Check Interview Completion Criteria (Prompt 38 Strict Min 8 Guard) ───────────
+        const MIN_QUESTIONS = 8;
+        const MAX_QUESTIONS = 15;
+        const currentQuestionCount = memory.getQuestionCount();
+        const isCoverageMet = this.curriculumNavigator.isCoverageComplete(memory.getVisitedDays(), currentQuestionCount, memory.getEvaluations());
+        // STRICT GUARANTEE: The interview MUST NEVER terminate when currentQuestionCount < MIN_QUESTIONS (8).
+        const reachesMinQuestions = currentQuestionCount >= MIN_QUESTIONS;
+        const reachesMaxCap = currentQuestionCount >= MAX_QUESTIONS;
+        const shouldTerminate = reachesMaxCap || (reachesMinQuestions && (isCoverageMet || evaluation?.next_action === 'terminate'));
+        if (shouldTerminate) {
             stateManager.completeInterview();
             // Final summary feedback — 1 LLM call or deterministic fallback
             llmCallCount++;

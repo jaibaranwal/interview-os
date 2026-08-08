@@ -32,9 +32,9 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
 
   const daysProgress = Math.min(100, Math.round((visitedDaysCount / minDays) * 100));
 
-  // Dynamic Interview Status Badge
+  // Dynamic Interview Status Badge (Strict MIN 8 Guard)
   const getInterviewStatus = () => {
-    if (isComplete) {
+    if (isComplete && questionCount >= minQuestions) {
       return { label: 'Ready for Evaluation', color: '#10B981', bg: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.4)' };
     }
     if (questionCount >= minQuestions) {
