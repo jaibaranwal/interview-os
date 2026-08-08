@@ -2,24 +2,51 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SessionManager = void 0;
 class SessionManager {
+    static instance;
+    sessions;
     constructor() {
-        // TODO: Initialize in-memory session map storage
+        this.sessions = new Map();
+    }
+    static getInstance() {
+        if (!SessionManager.instance) {
+            SessionManager.instance = new SessionManager();
+        }
+        return SessionManager.instance;
     }
     createSession(sessionId, candidate) {
-        // TODO: Future implementation to initialize stateful session record
-        throw new Error("Not implemented");
+        const now = new Date();
+        const session = {
+            sessionId,
+            candidate,
+            createdAt: now,
+            updatedAt: now,
+            messages: [],
+            metadata: {}
+        };
+        this.sessions.set(sessionId, session);
+        return session;
     }
     getSession(sessionId) {
-        // TODO: Future implementation to retrieve session state
-        throw new Error("Not implemented");
+        return this.sessions.get(sessionId);
     }
-    hasSession(sessionId) {
-        // TODO: Future implementation to check session existence
-        throw new Error("Not implemented");
+    updateSession(sessionId, updates) {
+        const existing = this.sessions.get(sessionId);
+        if (!existing) {
+            throw new Error(`Session with id '${sessionId}' not found.`);
+        }
+        const updatedSession = {
+            ...existing,
+            ...updates,
+            updatedAt: new Date()
+        };
+        this.sessions.set(sessionId, updatedSession);
+        return updatedSession;
     }
     deleteSession(sessionId) {
-        // TODO: Future implementation to clear session state
-        throw new Error("Not implemented");
+        return this.sessions.delete(sessionId);
+    }
+    hasSession(sessionId) {
+        return this.sessions.has(sessionId);
     }
 }
 exports.SessionManager = SessionManager;

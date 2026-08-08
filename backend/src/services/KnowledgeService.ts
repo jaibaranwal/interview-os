@@ -1,28 +1,49 @@
+import { CandidateLoader } from '../data/CandidateLoader';
+import { CurriculumLoader } from '../data/CurriculumLoader';
 import { CandidateProfile, CurriculumDay } from '../types';
 
 export interface IKnowledgeService {
-  getCandidateProfile(candidateId: string): CandidateProfile;
-  getCurriculumDay(dayNumber: number): CurriculumDay;
+  getCandidateProfile(candidateId: string): CandidateProfile | undefined;
+  getCandidateByName(name: string): CandidateProfile | undefined;
+  getAllCandidates(): CandidateProfile[];
+  getCurriculumDay(dayNumber: number): CurriculumDay | undefined;
+  getAllCurriculumDays(): CurriculumDay[];
   getCompletedMissions(candidate: CandidateProfile): CandidateProfile['missions'];
 }
 
 export class KnowledgeService implements IKnowledgeService {
-  constructor() {
-    // TODO: Inject CandidateLoader and CurriculumLoader dependencies
+  private candidateLoader: CandidateLoader;
+  private curriculumLoader: CurriculumLoader;
+
+  constructor(
+    candidateLoader: CandidateLoader = CandidateLoader.getInstance(),
+    curriculumLoader: CurriculumLoader = CurriculumLoader.getInstance()
+  ) {
+    this.candidateLoader = candidateLoader;
+    this.curriculumLoader = curriculumLoader;
   }
 
-  public getCandidateProfile(candidateId: string): CandidateProfile {
-    // TODO: Future implementation to fetch candidate profile from dataset loader
-    throw new Error("Not implemented");
+  public getCandidateProfile(candidateId: string): CandidateProfile | undefined {
+    return this.candidateLoader.getCandidateById(candidateId);
   }
 
-  public getCurriculumDay(dayNumber: number): CurriculumDay {
-    // TODO: Future implementation to fetch curriculum day metadata
-    throw new Error("Not implemented");
+  public getCandidateByName(name: string): CandidateProfile | undefined {
+    return this.candidateLoader.getCandidateByName(name);
+  }
+
+  public getAllCandidates(): CandidateProfile[] {
+    return this.candidateLoader.getAllCandidates();
+  }
+
+  public getCurriculumDay(dayNumber: number): CurriculumDay | undefined {
+    return this.curriculumLoader.getDayByNumber(dayNumber);
+  }
+
+  public getAllCurriculumDays(): CurriculumDay[] {
+    return this.curriculumLoader.getAllDays();
   }
 
   public getCompletedMissions(candidate: CandidateProfile): CandidateProfile['missions'] {
-    // TODO: Future implementation to filter completed missions for candidate
-    throw new Error("Not implemented");
+    return candidate.missions.filter((m) => m.passed === true);
   }
 }
