@@ -1,6 +1,31 @@
-node_modules
-dist
+# Environment Variables
 .env
-.env.local
-.DS_Store
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build Output
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+
+# Logs & Runtime Data
 *.log
+logs/
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor Directories
+.idea/
+.vscode/
+
+# Scratch & Temporary Files
+scratch/
+tmp/
