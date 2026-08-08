@@ -187,10 +187,11 @@ export class InterviewEngine {
     const currentRetryCount = stateManager.getRetryCount(currentDay.day);
     const currentFollowUpCount = stateManager.getFollowUpCount(currentDay.day);
 
-    // ─── 3. Check Interview Completion Criteria ──────────────────────────────
+    // ─── 3. Check Interview Completion Criteria (Prompt 38 Dynamic Adaptive Length) ───────────
     const isCoverageMet = this.curriculumNavigator.isCoverageComplete(
       memory.getVisitedDays(),
-      memory.getQuestionCount()
+      memory.getQuestionCount(),
+      memory.getEvaluations()
     );
 
     if (isCoverageMet || evaluation?.next_action === 'terminate') {

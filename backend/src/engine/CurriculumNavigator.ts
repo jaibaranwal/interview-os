@@ -25,7 +25,11 @@ export class CurriculumNavigator {
     return nextDay || this.loader.getDayByNumber(1)!;
   }
 
-  public isCoverageComplete(visitedDays: number[], questionCount: number): boolean {
-    return this.planner.hasSufficientCoverage(visitedDays, questionCount);
+  public isCoverageComplete(
+    visitedDays: number[],
+    questionCount: number,
+    evaluations: { score: number; correctness: string }[] = []
+  ): boolean {
+    return this.planner.hasSufficientCoverage(visitedDays, questionCount, evaluations);
   }
 }

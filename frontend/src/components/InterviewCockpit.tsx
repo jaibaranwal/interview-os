@@ -123,10 +123,10 @@ export const InterviewCockpit: React.FC<InterviewCockpitProps> = ({
             <Target size={20} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: '#94A3B8', marginBottom: '6px' }}>
-              <span style={{ fontWeight: 600 }}>Questions</span>
-              <span style={{ fontWeight: 800, color: questionCount >= minQuestions ? '#10B981' : '#FFFFFF' }}>
-                {questionCount} / {minQuestions} ({questionProgress}%)
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: '#94A3B8', marginBottom: '6px' }}>
+              <span style={{ fontWeight: 600 }}>Questions Asked</span>
+              <span style={{ fontWeight: 800, color: questionCount >= minQuestions ? '#10B981' : '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {questionCount} / 8+ {questionCount >= minQuestions && !isComplete && <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>Gathering Evidence...</span>}
               </span>
             </div>
             <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>

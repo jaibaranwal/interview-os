@@ -77,12 +77,14 @@ export interface TopicPerformanceRecord {
 
 export interface InterviewStatistics {
   questionsAsked: number;
+  minQuestionsRequired?: number;
   goodAnswersCount: number;
   weakAnswersCount: number;
   adaptiveFollowupsCount: number;
   topicsVisitedCount: number;
   averageResponseQuality: string; // e.g. "82%"
   confidence: 'High' | 'Medium' | 'Low' | string;
+  continuationReasons?: string[];
 }
 
 export interface PanelDecision {
@@ -107,6 +109,7 @@ export interface FeedbackObject {
   communicationAssessment?: string;
   topicsDemonstrated?: string[];
   topicsSkipped?: string[];
+  continuationReasons?: string[];
 }
 
 export interface InterviewResponse {

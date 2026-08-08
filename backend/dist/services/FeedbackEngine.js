@@ -183,16 +183,34 @@ class FeedbackEngine {
             focusedRoadmap.push('Implement end-to-end evaluation metrics and observability using structured logging and OpenTelemetry.');
         }
         const finalRoadmap = focusedRoadmap.slice(0, 3); // PROMPT 33 RULE: MAXIMUM 3 ROADMAP ITEMS
+        // ── Prompt 38: Continuation Reasons for Dynamic Interview Length ──
+        const continuationReasons = [];
+        if (askedQuestions.length > 8) {
+            if (confidence !== 'High') {
+                continuationReasons.push(`Evaluation confidence was ${confidence} (High required) — gathered additional technical evidence.`);
+            }
+            if (goodEvaluations.length < 4) {
+                continuationReasons.push(`Required additional implementation validation on core curriculum competencies.`);
+            }
+            if (visitedDays.length < 4) {
+                continuationReasons.push(`Covered additional curriculum topic days to ensure technical breadth.`);
+            }
+            if (continuationReasons.length === 0) {
+                continuationReasons.push(`Executed adaptive follow-up turns to thoroughly validate trade-off analysis.`);
+            }
+        }
         // ── Prompt 33 Goal 6: Interview Statistics ──
         const avgScore = memory.getAverageScore();
         const statistics = {
             questionsAsked: memory.getQuestionCount(),
+            minQuestionsRequired: 8,
             goodAnswersCount: goodEvaluations.length,
             weakAnswersCount: evaluations.length - goodEvaluations.length,
             adaptiveFollowupsCount: evaluations.filter((e) => e.next_action === 'follow_up').length,
             topicsVisitedCount: visitedDays.length,
             averageResponseQuality: `${Math.round(avgScore)}%`,
-            confidence
+            confidence,
+            continuationReasons: continuationReasons.length > 0 ? continuationReasons : undefined
         };
         // ── Prompt 33 Goal 7: Hiring Panel Decision Breakdown ──
         const getRecForRating = (rating) => {
@@ -229,6 +247,7 @@ class FeedbackEngine {
             confidence,
             statistics,
             panelDecision,
+            continuationReasons: continuationReasons.length > 0 ? continuationReasons : undefined,
             communicationAssessment: commRating >= 4 ? 'Clear and precise technical communication.' : 'Communication lacked depth on key implementation details.'
         };
         // Attempt LLM-enhanced feedback while guaranteeing Prompt 33 constraints

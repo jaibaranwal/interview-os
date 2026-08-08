@@ -285,16 +285,18 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
                 </div>
               </div>
 
-              {/* Interview Statistics */}
+              {/* Interview Statistics & Continuation Reason */}
               {feedback.statistics && (
-                <div style={{ background: 'rgba(16, 23, 40, 0.6)', borderRadius: '16px', padding: '18px 22px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <h4 style={{ fontSize: '0.82rem', fontWeight: 800, color: '#7DD3FC', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ background: 'rgba(16, 23, 40, 0.6)', borderRadius: '16px', padding: '18px 22px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <h4 style={{ fontSize: '0.82rem', fontWeight: 800, color: '#7DD3FC', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <BarChart2 size={16} /> Session Interview Statistics
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '0.84rem' }}>
                     <div style={{ background: 'rgba(5, 8, 22, 0.6)', padding: '10px 12px', borderRadius: '8px' }}>
                       <div style={{ color: '#94A3B8', fontSize: '0.74rem' }}>Questions Asked</div>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', marginTop: '2px' }}>{feedback.statistics.questionsAsked}</div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', marginTop: '2px' }}>
+                        {feedback.statistics.questionsAsked} <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 500 }}>(Min Required: 8)</span>
+                      </div>
                     </div>
                     <div style={{ background: 'rgba(5, 8, 22, 0.6)', padding: '10px 12px', borderRadius: '8px' }}>
                       <div style={{ color: '#94A3B8', fontSize: '0.74rem' }}>Good Answers</div>
@@ -309,6 +311,26 @@ ${feedback.next.map((n) => `• ${n}`).join('\n')}
                       <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#A855F7', marginTop: '2px' }}>{feedback.statistics.topicsVisitedCount}</div>
                     </div>
                   </div>
+
+                  {/* Prompt 38: Reason Interview Continued Beyond Question 8 */}
+                  {(feedback.continuationReasons || feedback.statistics.questionsAsked > 8) && (
+                    <div style={{ background: 'rgba(245, 158, 11, 0.08)', borderRadius: '10px', padding: '10px 14px', border: '1px solid rgba(245, 158, 11, 0.25)', marginTop: '4px' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#F59E0B', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Reason Interview Continued Beyond Question 8:
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#FFFFFF' }}>
+                        {(feedback.continuationReasons || [
+                          `Evaluation confidence was ${feedback.confidence || 'Medium'} — gathered additional technical evidence.`,
+                          `Required additional implementation validation on core curriculum competencies.`
+                        ]).map((reason, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                            <span style={{ color: '#F59E0B', fontWeight: 800 }}>•</span>
+                            <span>{reason}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

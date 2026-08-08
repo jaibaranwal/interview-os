@@ -82,9 +82,23 @@ class InterviewPlanner {
         }
         return this.curriculumLoader.getDayByNumber(1);
     }
-    hasSufficientCoverage(visitedDays, questionCount) {
+    hasSufficientCoverage(visitedDays, questionCount, evaluations = []) {
+        const MIN_QUESTIONS = 8;
+        const MAX_QUESTIONS = 12;
+        const MIN_DAYS = 4;
         const distinctDaysCount = new Set(visitedDays).size;
-        return (distinctDaysCount >= 4 && questionCount >= 6) || questionCount >= 8;
+        // Absolute minimum criteria: at least 8 questions and 4 curriculum days
+        if (questionCount < MIN_QUESTIONS || distinctDaysCount < MIN_DAYS) {
+            return false;
+        }
+        // Hard safety cap: never exceed MAX_QUESTIONS (12)
+        if (questionCount >= MAX_QUESTIONS) {
+            return true;
+        }
+        // Evidence-driven evaluation: check if enough technical evidence has been gathered
+        const solidTechnicalAnswers = evaluations.filter((e) => e.score >= 30 || ['GOOD', 'EXCELLENT'].includes(e.correctness)).length;
+        // High evaluation confidence achieved when at least 4 solid technical answers exist
+        return solidTechnicalAnswers >= 4;
     }
 }
 exports.InterviewPlanner = InterviewPlanner;
