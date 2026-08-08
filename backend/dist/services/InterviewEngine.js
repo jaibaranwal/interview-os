@@ -42,7 +42,7 @@ class InterviewEngine {
         let session;
         let memory;
         let stateMachine;
-        // 1 & 2. Load or Create Session and Memory
+        // 1 & 2. Load or Create Session
         if (!this.sessionManager.hasSession(sessionId)) {
             if (!isStartRequest) {
                 throw new Error(`Session '${sessionId}' not found. Initial start payload with candidate profile required.`);
@@ -51,16 +51,18 @@ class InterviewEngine {
             session = this.sessionManager.createSession(sessionId, candidate);
             memory = new ConversationMemory_1.ConversationMemory();
             stateMachine = new StateMachine_1.StateMachine(StateMachine_1.InterviewState.GREETING);
-            // 3 & 4. Run CandidateAnalyzer & Generate InterviewPlan
             const analysis = this.candidateAnalyzer.analyzeProfile(candidate);
             const plan = this.interviewPlanner.createPlan(candidate);
             const initialDifficulty = this.difficultyEngine.calculateInitialDifficulty(candidate);
             memory.setDifficulty(initialDifficulty);
+            // Select initial target day
+            const initialDay = this.interviewPlanner.selectNextTargetDay(candidate, []);
             session.metadata = {
                 memory,
                 stateMachine,
                 analysis,
-                plan
+                plan,
+                currentDay: initialDay
             };
             logger_1.Logger.info(`Orchestrated Turn 1 (GREETING) for session '${sessionId}' [Candidate: ${candidate.member.name}]`);
         }
@@ -80,51 +82,67 @@ class InterviewEngine {
         }
         const analysis = session.metadata.analysis;
         const plan = session.metadata.plan;
-        // Active Target Curriculum Day before turn evaluation
-        let currentTargetDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
+        // Active curriculum day from session metadata
+        let currentDay = session.metadata.currentDay;
+        if (!currentDay) {
+            currentDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
+            session.metadata.currentDay = currentDay;
+        }
+        const topicBefore = `Day ${currentDay.day}: ${currentDay.title}`;
         const previousQuestions = memory.getAskedQuestions();
         const lastQuestionText = previousQuestions.length > 0 ? previousQuestions[previousQuestions.length - 1].text : undefined;
-        // 5. Evaluate Candidate Response & State Decision
+        // 3. Evaluate Candidate Response & Transition Decision
         let evaluation;
         let currentState = stateMachine.getState();
-        let currentDayNum = currentTargetDay ? currentTargetDay.day : 7;
-        let currentRetryCount = memory.getRetryCountForDay(currentDayNum);
+        let transitionReason = 'Turn initialization / greeting';
         if (incomingMessage && incomingMessage.trim().length > 0) {
             memory.recordAnswer(incomingMessage);
-            // Run LLM Evaluation Engine
-            evaluation = await this.responseEvaluator.evaluateResponse(incomingMessage, currentTargetDay, lastQuestionText);
-            // Record Evaluation in Memory
-            memory.recordEvaluation(evaluation, currentDayNum);
+            // LLM Evaluation against currentDay
+            evaluation = await this.responseEvaluator.evaluateResponse(incomingMessage, currentDay, lastQuestionText);
+            memory.recordEvaluation(evaluation, currentDay.day);
             // Update Difficulty
             const updatedDifficulty = this.difficultyEngine.updateDifficulty(memory.getDifficulty(), evaluation);
             memory.setDifficulty(updatedDifficulty);
-            // State Transitions based on LLM Evaluation & Retry Count
+            // Advance State Machine
             if (currentState === StateMachine_1.InterviewState.LISTENING) {
                 stateMachine.transitionTo(StateMachine_1.InterviewState.EVALUATING);
                 currentState = stateMachine.getState();
             }
-            currentRetryCount = memory.getRetryCountForDay(currentDayNum);
+            const retryCount = memory.getRetryCountForDay(currentDay.day);
             if (currentState === StateMachine_1.InterviewState.EVALUATING) {
                 if (evaluation.next_action === 'retry') {
-                    if (currentRetryCount < 3) {
+                    if (retryCount < 3) {
                         stateMachine.transitionTo(StateMachine_1.InterviewState.HINT);
+                        transitionReason = `Evaluation score ${evaluation.score}/100 (${evaluation.correctness}) requested retry. Retry count: ${retryCount}/3. RETAINING TOPIC.`;
                     }
                     else {
-                        // Max retries reached: force topic switch
                         stateMachine.transitionTo(StateMachine_1.InterviewState.TOPIC_SWITCH);
+                        transitionReason = `Evaluation score ${evaluation.score}/100 requested retry, but retry limit (3) reached. FORCING TOPIC ADVANCE.`;
                     }
                 }
                 else if (evaluation.next_action === 'follow_up') {
                     stateMachine.transitionTo(StateMachine_1.InterviewState.FOLLOW_UP);
+                    transitionReason = `Evaluation score ${evaluation.score}/100 (${evaluation.correctness}) requested follow-up on missing concepts. RETAINING TOPIC.`;
                 }
                 else {
-                    // Advance (score >= 70 or satisfactory answer)
                     stateMachine.transitionTo(StateMachine_1.InterviewState.TOPIC_SWITCH);
+                    transitionReason = `Evaluation score ${evaluation.score}/100 (${evaluation.correctness}) passed threshold. ADVANCING TOPIC.`;
                 }
                 currentState = stateMachine.getState();
             }
+            // STRICT CURRICULUM PROGRESSION RULE:
+            // Topic advances ONLY IF evaluation explicitly returned next_action == "advance" OR retryCount >= 3
+            const shouldAdvanceTopic = evaluation.next_action === 'advance' || retryCount >= 3;
+            if (shouldAdvanceTopic) {
+                const nextDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
+                if (nextDay && nextDay.day !== currentDay.day) {
+                    currentDay = nextDay;
+                    session.metadata.currentDay = currentDay;
+                }
+            }
         }
-        // Check if Interview Completion Criteria Met (>= 8 questions AND >= 4 distinct days)
+        const topicAfter = `Day ${currentDay.day}: ${currentDay.title}`;
+        // 4. Check Completion Criteria (>= 8 questions AND >= 4 distinct days)
         const isCoverageMet = this.interviewPlanner.hasSufficientCoverage(memory.getVisitedDays(), memory.getQuestionCount());
         if (isCoverageMet) {
             if (stateMachine.canTransitionTo(StateMachine_1.InterviewState.FINAL_EVALUATION)) {
@@ -151,35 +169,28 @@ class InterviewEngine {
                 feedback
             };
         }
-        // Determine target day for turn (Retain current day if retry, else select next)
-        if (evaluation?.next_action === 'retry' && currentRetryCount < 3) {
-            // Retain current target day! Do NOT advance curriculum day!
-        }
-        else {
-            currentTargetDay = this.interviewPlanner.selectNextTargetDay(session.candidate, memory.getVisitedDays());
-        }
-        // 6. Call PromptBuilder
+        // 5. Generate System Prompt & LLM Question
+        const retryCountForPrompt = memory.getRetryCountForDay(currentDay.day);
         const systemPrompt = this.promptBuilder.buildSystemPrompt({
             candidate: session.candidate,
             analysis,
             plan,
             currentState,
-            currentDay: currentTargetDay,
+            currentDay,
             questionCount: memory.getQuestionCount(),
             visitedDays: memory.getVisitedDays(),
             difficulty: memory.getDifficulty(),
             askedQuestions: memory.getAskedQuestions().map((q) => q.text),
             previousAnswer: incomingMessage,
             evaluation,
-            retryCount: currentRetryCount
+            retryCount: retryCountForPrompt
         });
-        // 7 & 8. Call LLM to Generate Next Question
         const llmReply = await this.llmClient.generate(systemPrompt, incomingMessage || '');
-        // 10. Record Question in Memory
-        if (currentTargetDay && currentState !== StateMachine_1.InterviewState.GREETING) {
-            memory.recordQuestion(currentTargetDay.day, currentTargetDay.objectives[0] || currentTargetDay.title, llmReply);
+        // 6. Record Question in Memory
+        if (currentDay && currentState !== StateMachine_1.InterviewState.GREETING) {
+            memory.recordQuestion(currentDay.day, currentDay.objectives[0] || currentDay.title, llmReply);
         }
-        // 11. Cleanly advance StateMachine to LISTENING for the next candidate turn
+        // 7. Transition StateMachine to LISTENING
         if (currentState === StateMachine_1.InterviewState.GREETING) {
             stateMachine.transitionTo(StateMachine_1.InterviewState.PLANNING);
             stateMachine.transitionTo(StateMachine_1.InterviewState.QUESTION);
@@ -205,7 +216,7 @@ class InterviewEngine {
         else if (currentState === StateMachine_1.InterviewState.QUESTION) {
             stateMachine.transitionTo(StateMachine_1.InterviewState.LISTENING);
         }
-        // 12. Save Session
+        // 8. Save Session
         const updatedMessages = [
             ...session.messages,
             ...(incomingMessage ? [{ role: 'candidate', content: incomingMessage, timestamp: new Date() }] : []),
@@ -216,28 +227,27 @@ class InterviewEngine {
             metadata: session.metadata
         });
         const latency = Date.now() - startTime;
-        // Structured Backend Terminal Logging
-        console.log('\n==================== INTERVIEW TURN ====================');
+        // Detailed Audit Terminal Log Output
+        console.log('\n==================== AUDITED INTERVIEW TURN ====================');
         console.log(`Session ID: ${sessionId}`);
         console.log(`Candidate: ${session.candidate.member.name} (${session.candidate.member.jobRole})`);
-        console.log(`Current State: ${stateMachine.getState()} | Difficulty: ${memory.getDifficulty().toFixed(1)}/5.0`);
-        console.log(`Target Day: Day ${currentTargetDay?.day || 7} (${currentTargetDay?.title})`);
+        console.log(`Current Topic BEFORE: ${topicBefore}`);
+        console.log(`Current Topic AFTER:  ${topicAfter}`);
+        console.log(`Transition Reason:    ${transitionReason}`);
         if (incomingMessage) {
-            console.log(`Incoming Response: "${incomingMessage}"`);
+            console.log(`Incoming Response:    "${incomingMessage}"`);
         }
         if (evaluation) {
             console.log('\n--- LLM EVALUATION ---');
-            console.log(`Score: ${evaluation.score} / 100 | Confidence: ${evaluation.confidence} / 100`);
-            console.log(`Correctness: ${evaluation.correctness}`);
-            console.log(`Detected Concepts: ${evaluation.detected_concepts.join(', ') || 'None'}`);
-            console.log(`Missing Concepts: ${evaluation.missing_concepts.join(', ') || 'None'}`);
-            console.log(`Next Action Decision: ${evaluation.next_action} (Retry Count: ${currentRetryCount}/3)`);
+            console.log(`Score: ${evaluation.score}/100 | Confidence: ${evaluation.confidence}/100 | Correctness: ${evaluation.correctness}`);
+            console.log(`Next Action Decision: ${evaluation.next_action} (Retry Count: ${retryCountForPrompt}/3)`);
+            console.log(`Detected Concepts:    ${evaluation.detected_concepts.join(', ') || 'None'}`);
+            console.log(`Missing Concepts:     ${evaluation.missing_concepts.join(', ') || 'None'}`);
         }
         console.log('\n--- GENERATED QUESTION ---');
         console.log(`"${llmReply}"`);
         console.log(`\nLatency: ${latency}ms | Questions Asked: ${memory.getQuestionCount()}/8 | Visited Days: ${memory.getVisitedDays().length}/4`);
-        console.log('========================================================\n');
-        // 13. Return Response
+        console.log('=================================================================\n');
         return {
             reply: llmReply,
             done: false
